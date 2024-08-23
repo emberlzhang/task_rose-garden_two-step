@@ -1,0 +1,9 @@
+{
+  "short_name": "Rose Garden Game",
+  "name": "Rose Garden Two Stage Task",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

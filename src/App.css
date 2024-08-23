@@ -1,0 +1,91 @@
+body {
+  text-align: center;
+  font-family: Verdana, Geneva, Tahoma, sans-serif;
+  background-color: mediumseagreen;
+}
+
+/* .container {
+  margin: 20px;
+} */
+
+.instructions,
+.stage,
+.garden {
+  margin: 20px auto;
+  padding: 10px;
+  border: 1px solid beige;
+  border-radius: 5px;
+  background-color: beige;
+  width: 60%;
+  box-sizing: border-box; 
+}
+
+.instructions ul {
+  text-align: left;
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+.instructions ul li {
+  margin-bottom: 10px;
+}
+
+.stage {
+  height: 350px; /* Set a consistent height for Stage 1 and Stage 2 divs */
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center; */
+}
+
+.garden {
+  position: relative;
+}
+
+.rose-image{
+  border-radius: 50%;
+}
+
+.store-image {
+  height: 250px;
+  width: auto;
+  margin: 0 20px;
+  max-height: 800%;
+  max-width: 80%;
+  object-fit: contain; 
+}
+
+.garden-canvas {
+  position: relative;
+  width: 500px;
+  height: 250px;
+  border: 12px solid burlywood;
+  border-radius: 15px;
+  margin: 0 auto;
+  background-color: green;
+}
+
+.store-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.gardener-selection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.gardener-image {
+  height: 250px; /* Adjust height to be half as tall as before */
+  width: auto;
+  margin: 0 20px;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
