@@ -8,6 +8,7 @@ body {
   margin: 20px;
 } */
 
+.intake-form,
 .instructions,
 .stage,
 .garden {
@@ -17,7 +18,30 @@ body {
   border-radius: 5px;
   background-color: beige;
   width: 60%;
-  box-sizing: border-box; 
+  box-sizing: border-box;
+}
+
+.intake-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.intake-form input {
+  margin: 10px 0;
+  padding: 5px;
+  width: 200px;
+}
+
+.intake-form button {
+  margin-top: 10px;
+  padding: 5px 10px;
+}
+
+.error-message {
+  color: red;
+  margin-top: 5px;
 }
 
 .instructions ul {
@@ -33,7 +57,8 @@ body {
 }
 
 .stage {
-  height: 350px; /* Set a consistent height for Stage 1 and Stage 2 divs */
+  height: 500px;
+  /* Set a consistent height for Stage 1 and Stage 2 divs */
   display: flex;
   flex-direction: column;
   /* justify-content: center; */
@@ -43,7 +68,7 @@ body {
   position: relative;
 }
 
-.rose-image{
+.rose-image {
   border-radius: 50%;
 }
 
@@ -53,7 +78,7 @@ body {
   margin: 0 20px;
   max-height: 800%;
   max-width: 80%;
-  object-fit: contain; 
+  object-fit: contain;
 }
 
 .garden-canvas {
@@ -79,7 +104,8 @@ body {
 }
 
 .gardener-image {
-  height: 250px; /* Adjust height to be half as tall as before */
+  height: 250px;
+  /* Adjust height to be half as tall as before */
   width: auto;
   margin: 0 20px;
 }
@@ -88,4 +114,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+}
+
+.game-over {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
 }
