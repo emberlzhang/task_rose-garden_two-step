@@ -116,25 +116,30 @@ const App = () => {
     </div>
   );
 
-  const chooseStore = (store) => {
+  const chooseStore = (store, keypress) => {
     setStage('stage2');
     setSelectedStore(store);
-    chooseGardenerPair(store);
+    chooseGardenerPair(store, keypress);
   };
 
-  const chooseGardenerPair = (store) => {
+  const chooseGardenerPair = (store, keypress) => {
     let randomValue = Math.random();
     let gardenerPair;
+
+    // Choose gardener pair based on user choice and 80/20 probabilities 
     if (store === 'Store 1') {
       gardenerPair = randomValue < 0.8 ? gardenerPairs.pair1 : gardenerPairs.pair2;
     } else {
       gardenerPair = randomValue < 0.2 ? gardenerPairs.pair1 : gardenerPairs.pair2;
     }
     setCurrentGardenerPair(gardenerPair);
+
+    // Save data after setting the store and gardener pair
     setData(prevData => [...prevData, {
       timestamp: new Date().toISOString(),
-      stage: stage,
-      selectedStore: selectedStore,
+      stage: 'stage1',
+      userChoice: keypress,
+      selectedStore: store,
       gardenerPair: gardenerPair,
     }])
   };
@@ -167,10 +172,10 @@ const App = () => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       if (stage === 'stage1') {
         const store = event.key === 'ArrowLeft' ? 'Store 1' : 'Store 2';
-        chooseStore(store);
+        chooseStore(store, event.key);
       } else if (stage === 'stage2') {
         const gardener = event.key === 'ArrowLeft' ? 'Gardener 1' : 'Gardener 2';
-        chooseGardener(gardener);
+        chooseGardener(gardener, event.key);
       }
     }
   };
@@ -190,14 +195,15 @@ const App = () => {
     setKeyPressEnabled(stage === 'stage1' || stage === 'stage2');
   }, [stage]);
 
-  const chooseGardener = (gardener) => {
+  const chooseGardener = (gardener, keypress) => {
     // Save gardener choice
     setSelectedGardener(gardener);
     setData(prevData => [...prevData, {
       timestamp: new Date().toISOString(),
-      stage: stage,
+      stage: 'stage2',
+      userChoice: keypress,
       gardenerPair: currentGardenerPair,
-      selectedGardener: selectedGardener
+      selectedGardener: gardener
     }])
 
     // Add rose to garden
@@ -287,12 +293,16 @@ const App = () => {
   const saveChoicesToCSV = (data) => {
     const csvRows = [];
     const headers = Object.keys(data[0]);
+    console.log("CSV headers: " + headers)
+
     csvRows.push(headers.join(','));
 
+    // Add each row of data
     for (const row of data) {
       csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
     }
 
+    // Create CSV and trigger automatic download
     const csvString = csvRows.join('\n');
     const blob = new Blob([csvString], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
