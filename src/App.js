@@ -20,6 +20,7 @@ const App = () => {
   const [currentGardenerPair, setCurrentGardenerPair] = useState([]);
   const [selectedGardener, setSelectedGardener] = useState([]);
   const [currentBeds, setCurrentBeds] = useState(practiceFlowerBeds);
+  const [highlightedRose, setHighlightedRose] = useState(null);
   const canvasRef = useRef(null);
   const [data, setData] = useState([]); // Stores game data and user choices
   const gardenerPairs = {
@@ -99,8 +100,10 @@ const App = () => {
     </div>
   );
 
-  const showStage1 = () => (
-    <div className="stage">
+  const showStage1 = () => {
+    setHighlightedRose(null);
+
+    return (<div className="stage">
       <h2>Step 1: Choose a Gardening Store</h2>
       <p>Press Left Arrow for Left Store, Right Arrow for Right Store</p>
       <span>
@@ -116,8 +119,8 @@ const App = () => {
         />
       </span>
       <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
-    </div>
-  );
+    </div>)
+  };
 
   const chooseStore = (store, keypress) => {
     // Set store and gardener pair
@@ -246,7 +249,7 @@ const App = () => {
     while (positionIsTaken) {
       x = Math.floor(Math.random() * (gardenWidth / 32)) * 32;
       y = Math.floor(Math.random() * (gardenHeight / 32)) * 32;
-      console.log("x: " + x + " | y: " + y)
+
       // Check if the chosen coordinates are marked for the right flower color
       if ((currentBeds[y / 32][x / 32] === 1 && roseColor === 'red') ||
         (currentBeds[y / 32][x / 32] === 2 && roseColor === 'yellow')) {
@@ -254,22 +257,31 @@ const App = () => {
         positionIsTaken = garden.some(rose => rose.x === x && rose.y === y);
       }
     }
-    setGarden([...garden, { roseColor, x, y }]);
+    const newRose = { roseColor, x, y };
+    setGarden([...garden, newRose]);
+    setHighlightedRose(newRose);
 
   };
 
-  const drawRose = (ctx, rose) => {
+  const drawRose = (ctx, rose, isHighlighted) => {
     const img = new Image();
     img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
+
     img.onload = () => {
       // Make roses appear round in shape instead of squares
-
       // Draw a circular clipping path
       ctx.save(); // Save the current canvas state
       ctx.beginPath();
       ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
       ctx.closePath();
       ctx.clip(); // Clip to the circular path
+
+      // Draw a glowing effect if this is the highlighted rose
+      if (isHighlighted) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(255, 255, 0, 1)';
+      }
+
       // Draw the image within the clipped area
       ctx.drawImage(img, rose.x, rose.y, 32, 32);
       // Restore the previous canvas state
@@ -281,9 +293,14 @@ const App = () => {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
-      garden.forEach(rose => drawRose(ctx, rose));
+
+      garden.forEach(rose => {
+        const isHighlighted = highlightedRose && highlightedRose.x === rose.x && highlightedRose.y === rose.y;
+        drawRose(ctx, rose, isHighlighted);
+      });
+
     }
-  }, [garden]);
+  }, [garden, highlightedRose]);
 
   const showGarden = () => (
     <div className="garden">
@@ -292,14 +309,17 @@ const App = () => {
     </div>
   );
 
-  const showGameOver = () => (
-    <div className="game-over">
-      <h2>Game Over</h2>
-      <p>Congratulations! You've completed the game.</p>
-      <p>Your final garden has {roseCount} roses.</p>
-      {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
-    </div>
-  );
+  const showGameOver = () => {
+    setHighlightedRose(null) // Stop highlighting when the game ends
+    return (
+      <div className="game-over">
+        <h2>Game Over</h2>
+        <p>Congratulations! You've completed the game.</p>
+        <p>Your final garden has {roseCount} roses.</p>
+        {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
+      </div>
+    );
+  };
 
   // Function to convert data to CSV and download
   const saveChoicesToCSV = (data) => {
