@@ -5,6 +5,9 @@ import { practiceFlowerBeds, flowerBeds } from './flowerBeds.js';
 const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
 const gardenHeight = 32 * 21; // the last number should be number of rows in flowerBeds array
 
+const intertrialinterval1 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 1 choice, before stage 2 display
+const intertrialinterval2 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 2 choice, before adding rose
+
 const App = () => {
   const [stage, setStage] = useState('intake');
   const [subjectId, setSubjectId] = useState('');
@@ -117,9 +120,15 @@ const App = () => {
   );
 
   const chooseStore = (store, keypress) => {
-    setStage('stage2');
+    // Set store and gardener pair
     setSelectedStore(store);
     chooseGardenerPair(store, keypress);
+
+    // Intertrial interval delay before moving onto stage 2
+    setTimeout(() => {
+      setStage('stage2');
+    }, intertrialinterval1); // delay before stage 2
+
   };
 
   const chooseGardenerPair = (store, keypress) => {
@@ -206,24 +215,27 @@ const App = () => {
       selectedGardener: gardener
     }])
 
-    // Add rose to garden
-    const roseColor = Math.random() < 0.5 ? 'yellow' : 'red';
-    addRoseToGarden(roseColor);
-    setRoseCount(roseCount + 1);
+    setTimeout(() => {
+      // Add rose to garden
+      const roseColor = Math.random() < 0.5 ? 'yellow' : 'red';
+      addRoseToGarden(roseColor);
+      setRoseCount(roseCount + 1);
 
-    // Increment round count
-    const newRoundCount = roundCount + 1;
-    setRoundCount(newRoundCount);
+      // Increment round count
+      const newRoundCount = roundCount + 1;
+      setRoundCount(newRoundCount);
 
-    // Check if practice or game should end
-    if (isPractice && newRoundCount >= PRACTICE_ROUNDS) {
-      setStage('transition'); // go to transition screen before real game
-    } else if (!isPractice && newRoundCount >= MAX_ROUNDS) {
-      setStage('gameOver'); // end the game
-    } else {
-      // proceed to next round
-      setStage('stage1');
-    }
+      // Check if practice or game should end
+      if (isPractice && newRoundCount >= PRACTICE_ROUNDS) {
+        setStage('transition'); // go to transition screen before real game
+      } else if (!isPractice && newRoundCount >= MAX_ROUNDS) {
+        setStage('gameOver'); // end the game
+      } else {
+        // proceed to next round
+        setStage('stage1');
+      }
+    }, intertrialinterval2); // Delay before adding rose and proceed to next round
+
   };
 
   const addRoseToGarden = (roseColor) => {
