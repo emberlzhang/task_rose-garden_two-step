@@ -310,7 +310,7 @@ const App = () => {
   );
 
   const showGameOver = () => {
-    setHighlightedRose(null) // Stop highlighting when the game ends
+    // setHighlightedRose(null) // Stop highlighting when the game ends
     return (
       <div className="game-over">
         <h2>Game Over</h2>
