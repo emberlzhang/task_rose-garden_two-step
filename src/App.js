@@ -110,12 +110,12 @@ const App = () => {
         <img
           src="/gardenstore-red.png"
           alt="Red Garden Store"
-          className="store-image"
+          className={`store-image ${selectedStore === 'Store 1' ? 'selected' : ''}`}
         />
         <img
           src="/gardenstore-blue.png"
           alt="Blue Garden Store"
-          className="store-image"
+          className={`store-image ${selectedStore === 'Store 2' ? 'selected' : ''}`}
         />
       </span>
       <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
@@ -165,12 +165,12 @@ const App = () => {
           <img
             src={currentGardenerPair[0]}
             alt="Gardener A"
-            className="gardener-image"
+            className={`gardener-image ${selectedGardener === 'Gardener 1' ? 'selected' : ''}`}
           />
           <img
             src={currentGardenerPair[1]}
             alt="Gardener B"
-            className="gardener-image"
+            className={`gardener-image ${selectedGardener === 'Gardener 2' ? 'selected' : ''}`}
           />
         </div>
       </span>

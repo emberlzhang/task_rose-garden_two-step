@@ -72,6 +72,16 @@ body {
   border-radius: 50%;
 }
 
+.store-image.selected,
+.gardener-image.selected {
+  border: 5px solid black;
+}
+
+.store-image,
+.gardener-image {
+  transition: border 0.3s;
+}
+
 .store-image {
   height: 250px;
   width: auto;
