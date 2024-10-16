@@ -21,7 +21,7 @@ const App = () => {
   const [currentGardenerPair, setCurrentGardenerPair] = useState([]);
   const [selectedGardener, setSelectedGardener] = useState([]);
   const [currentBeds, setCurrentBeds] = useState(practiceFlowerBeds);
-  // const [highlightedRose, setHighlightedRose] = useState(null);
+  const [newestRoseIndex, setNewestRoseIndex] = useState(null);
   const canvasRef = useRef(null);
   const [data, setData] = useState([]); // Stores game data and user choices
   const gardenerPairs = {
@@ -247,7 +247,6 @@ const App = () => {
   };
 
   // let currentRegionIndex = 0
-
   const addRoseToGarden = (roseColor) => {
     let x, y;
     let positionIsTaken = true;
@@ -264,16 +263,28 @@ const App = () => {
       x = Math.floor(Math.random() * (gardenWidth / 32)) * 32;
       y = Math.floor(Math.random() * (gardenHeight / 32)) * 32;
 
+      const rowIndex = y / 32;
+      const colIndex = x / 32;
+
       // Check if the chosen coordinates are marked for the right flower color
-      if ((currentBeds[y / 32][x / 32] === 1 && roseColor === 'red') ||
-        (currentBeds[y / 32][x / 32] === 2 && roseColor === 'yellow')) {
+      if ((currentBeds[rowIndex][colIndex] === 1 && roseColor === 'red') ||
+        (currentBeds[rowIndex][colIndex] === 2 && roseColor === 'yellow')) {
         // Check if these coordinates are already taken by another rose
         positionIsTaken = garden.some(rose => rose.x === x && rose.y === y);
       }
     }
     const newRose = { roseColor, x, y };
-    setGarden([...garden, newRose]);
-    // setHighlightedRose(newRose);
+    setGarden(prevGarden => {
+      const newGarden = [...prevGarden, newRose];
+      setNewestRoseIndex(newGarden.length - 1);
+      return newGarden;
+    });
+
+    // Clear the highlight after 2 seconds
+    setTimeout(() => {
+      setNewestRoseIndex(null);
+    }, 2000);
+
 
     // // Check if target region is full. If full, move to next region.
     // let unoccupiedPositions = [];
@@ -294,52 +305,62 @@ const App = () => {
 
   };
 
-  // const drawRose = (ctx, rose, isHighlighted) => {
-  const drawRose = (ctx, rose) => {
-    const img = new Image();
-    img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
-
-    img.onload = () => {
-      // Make roses appear round in shape instead of squares
-      // Draw a circular clipping path
-      ctx.save(); // Save the current canvas state
-      ctx.beginPath();
-      ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
-      ctx.closePath();
-      ctx.clip(); // Clip to the circular path
-
-      // // Draw a glowing effect if this is the highlighted rose
-      // if (isHighlighted) {
-      //   ctx.shadowBlur = 20;
-      //   ctx.shadowColor = 'rgba(255, 255, 0, 1)';
-      // }
-
-      // Draw the image within the clipped area
-      ctx.drawImage(img, rose.x, rose.y, 32, 32);
-      // Restore the previous canvas state
-      ctx.restore();
-    };
-  };
-
   useEffect(() => {
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
 
       garden.forEach(rose => {
-        // const isHighlighted = highlightedRose && highlightedRose.x === rose.x && highlightedRose.y === rose.y;
-        // drawRose(ctx, rose, isHighlighted);
         drawRose(ctx, rose);
       });
-
     }
-    // }, [garden, highlightedRose]);
   }, [garden]);
+
+  const drawRose = (ctx, rose) => {
+    const img = new Image();
+    img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
+    img.onload = () => {
+      ctx.save(); // Save the current canvas state
+
+      // Make roses appear round in shape instead of squares
+      ctx.beginPath();
+      ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
+      ctx.closePath();
+      ctx.clip();
+
+      // Draw the image within the clipped area
+      ctx.drawImage(img, rose.x, rose.y, 32, 32);
+
+      ctx.restore(); // Restore the previous canvas state
+    };
+  };
 
   const showGarden = () => (
     <div className="garden">
       <h3>Your rose garden is growing...</h3>
-      <canvas ref={canvasRef} width={gardenWidth} height={gardenHeight} className="garden-canvas"></canvas>
+      <div className="garden-container" style={{ position: 'relative' }}>
+        <canvas
+          ref={canvasRef}
+          width={gardenWidth}
+          height={gardenHeight}
+          className="garden-canvas"
+        />
+        {newestRoseIndex !== null && garden[newestRoseIndex] && (
+          <div
+            className="newest-rose-indicator"
+            style={{
+              position: 'absolute',
+              left: garden[newestRoseIndex].x,
+              top: garden[newestRoseIndex].y,
+              width: '32px',
+              height: '32px',
+              border: '5px solid black',
+              borderRadius: '50%',
+              animation: 'fade-out 1s forwards'
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 

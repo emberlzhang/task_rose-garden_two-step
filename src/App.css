@@ -72,6 +72,20 @@ body {
   border-radius: 50%;
 }
 
+.newest-rose-indicator {
+  pointer-events: none;
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
 .store-image.selected,
 .gardener-image.selected {
   border: 10px solid black;
