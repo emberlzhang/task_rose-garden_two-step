@@ -74,12 +74,7 @@ body {
 
 .store-image.selected,
 .gardener-image.selected {
-  border: 5px solid black;
-}
-
-.store-image,
-.gardener-image {
-  transition: border 0.3s;
+  border: 10px solid black;
 }
 
 .store-image {

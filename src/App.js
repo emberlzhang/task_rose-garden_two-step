@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
-import { practiceFlowerBeds, flowerBeds } from './flowerBeds.js';
+import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
 
 const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
 const gardenHeight = 32 * 21; // the last number should be number of rows in flowerBeds array
 
 const intertrialinterval1 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 1 choice, before stage 2 display
 const intertrialinterval2 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 2 choice, before adding rose
+let currentFlowerRegions = flowerRegions;
 
 const App = () => {
   const [stage, setStage] = useState('intake');
@@ -20,7 +21,7 @@ const App = () => {
   const [currentGardenerPair, setCurrentGardenerPair] = useState([]);
   const [selectedGardener, setSelectedGardener] = useState([]);
   const [currentBeds, setCurrentBeds] = useState(practiceFlowerBeds);
-  const [highlightedRose, setHighlightedRose] = useState(null);
+  // const [highlightedRose, setHighlightedRose] = useState(null);
   const canvasRef = useRef(null);
   const [data, setData] = useState([]); // Stores game data and user choices
   const gardenerPairs = {
@@ -101,7 +102,7 @@ const App = () => {
   );
 
   const showStage1 = () => {
-    setHighlightedRose(null);
+    // setHighlightedRose(null);
 
     return (<div className="stage">
       <h2>Step 1: Choose a Gardening Store</h2>
@@ -130,6 +131,7 @@ const App = () => {
     // Intertrial interval delay before moving onto stage 2
     setTimeout(() => {
       setStage('stage2');
+      setSelectedStore(''); // reset selection box display
     }, intertrialinterval1); // delay before stage 2
 
   };
@@ -219,6 +221,9 @@ const App = () => {
     }])
 
     setTimeout(() => {
+      // reset selection box display
+      setSelectedGardener('');
+
       // Add rose to garden
       const roseColor = Math.random() < 0.5 ? 'yellow' : 'red';
       addRoseToGarden(roseColor);
@@ -241,12 +246,21 @@ const App = () => {
 
   };
 
+  // let currentRegionIndex = 0
+
   const addRoseToGarden = (roseColor) => {
     let x, y;
     let positionIsTaken = true;
+    // let targetRegion = currentFlowerRegions[roseColor][currentRegionIndex]
+    // // Extract the boundaries of the target region
+    // const [[xmin, xmax], [ymin, ymax]] = targetRegion;
 
     // Keep generating random coordinates until an empty spot is found
     while (positionIsTaken) {
+      // randomly choose a flower within the current region, check if 1 needs to be there
+      // x = (Math.floor(Math.random() * (xmax - xmin + 1)) + xmin) * 32; // Generate a random x within bounds
+      // y = (Math.floor(Math.random() * (ymax - ymin + 1)) + ymin) * 32; // Generate a random y within bounds
+
       x = Math.floor(Math.random() * (gardenWidth / 32)) * 32;
       y = Math.floor(Math.random() * (gardenHeight / 32)) * 32;
 
@@ -259,11 +273,29 @@ const App = () => {
     }
     const newRose = { roseColor, x, y };
     setGarden([...garden, newRose]);
-    setHighlightedRose(newRose);
+    // setHighlightedRose(newRose);
+
+    // // Check if target region is full. If full, move to next region.
+    // let unoccupiedPositions = [];
+    // for (let ry = ymin; ry <= ymax; ry++) {
+    //   for (let rx = xmin; rx <= xmax; rx++) {
+    //     if ((currentBeds[ry][rx] === 1 && roseColor === 'red') ||
+    //       (currentBeds[ry][rx] === 2 && roseColor === 'yellow') &&
+    //       !garden.some(rose => rose.x === rx * 32 && rose.y === ry * 32)) {
+    //       unoccupiedPositions.push([ry, rx]);
+    //     }
+    //   }
+    // }
+
+    // if (unoccupiedPositions.length === 0) {
+    //   console.log(`Region ${currentRegionIndex} is full, moving to region ${currentRegionIndex + 1}.`);
+    //   currentRegionIndex++; // Move to the next region
+    // }
 
   };
 
-  const drawRose = (ctx, rose, isHighlighted) => {
+  // const drawRose = (ctx, rose, isHighlighted) => {
+  const drawRose = (ctx, rose) => {
     const img = new Image();
     img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
 
@@ -276,11 +308,11 @@ const App = () => {
       ctx.closePath();
       ctx.clip(); // Clip to the circular path
 
-      // Draw a glowing effect if this is the highlighted rose
-      if (isHighlighted) {
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = 'rgba(255, 255, 0, 1)';
-      }
+      // // Draw a glowing effect if this is the highlighted rose
+      // if (isHighlighted) {
+      //   ctx.shadowBlur = 20;
+      //   ctx.shadowColor = 'rgba(255, 255, 0, 1)';
+      // }
 
       // Draw the image within the clipped area
       ctx.drawImage(img, rose.x, rose.y, 32, 32);
@@ -295,12 +327,14 @@ const App = () => {
       ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
 
       garden.forEach(rose => {
-        const isHighlighted = highlightedRose && highlightedRose.x === rose.x && highlightedRose.y === rose.y;
-        drawRose(ctx, rose, isHighlighted);
+        // const isHighlighted = highlightedRose && highlightedRose.x === rose.x && highlightedRose.y === rose.y;
+        // drawRose(ctx, rose, isHighlighted);
+        drawRose(ctx, rose);
       });
 
     }
-  }, [garden, highlightedRose]);
+    // }, [garden, highlightedRose]);
+  }, [garden]);
 
   const showGarden = () => (
     <div className="garden">
