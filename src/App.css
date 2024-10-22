@@ -72,10 +72,6 @@ body {
   border-radius: 50%;
 }
 
-.newest-rose-indicator {
-  pointer-events: none;
-}
-
 @keyframes fade-out {
   from {
     opacity: 1;

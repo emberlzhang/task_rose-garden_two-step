@@ -56,37 +56,37 @@ export const flowerBeds = [
 // format for each region's bounds: [[xmin, xmax], [ymin, ymax]] <--values are inclusive
 export const practiceFlowerRegions = {
   'red': [
-    [[15, 15], [9, 13]] //center beam
-    [[13, 17], [6, 16]] //outer dots
+    [15, 15, 9, 13], //center beam
+    [13, 17, 6, 16] //outer dots
   ],
   'yellow': [
-    [[12, 18], [9, 13]] //center diamond
+    [12, 18, 9, 13] //center diamond
   ]
 };
 
 // format for each region's bounds: [[xmin, xmax], [ymin, ymax]] <--values are inclusive
 export const flowerRegions = {
   'red': [
-    [[13, 17], [1, 1]],   //top middle line
-    [[1, 3], [1, 3]],     //top left corner
-    [[27, 29], [19, 21]], //bottom right corner
-    [[1, 3], [19, 21]],   //bottom left corner
-    [[27, 29], [1, 3]],   //top right corner
-    [[16, 18], [3, 7]],   //upper right diagonal
-    [[12, 14], [15, 18]], //lower left diagonal
-    [[13, 17], [9, 13]],  //middle diamond shape
-    [[5, 10], [5, 10]],   //upper left large triangle
-    [[20, 25], [12, 17]], //lower right large triangle
-    [[6, 10], [12, 16]],  //lower left large triangle
-    [[20, 24], [6, 10]],  //upper right large triangle
+    [13, 17, 1, 1],   //top middle line
+    [1, 3, 1, 3],     //top left corner
+    [27, 29, 19, 21], //bottom right corner
+    [1, 3, 19, 21],   //bottom left corner
+    [27, 29, 1, 3],   //top right corner
+    [16, 18, 3, 7],   //upper right diagonal
+    [12, 14, 15, 18], //lower left diagonal
+    [13, 17, 9, 13],  //middle diamond shape
+    [5, 10, 5, 10],   //upper left large triangle
+    [20, 25, 12, 17], //lower right large triangle
+    [6, 10, 12, 16],  //lower left large triangle
+    [20, 24, 6, 10],  //upper right large triangle
   ],
   'yellow': [
-    [[13, 17], [21, 21]],   //bottom middle line
-    [[12, 14], [3, 7]],   //upper left diagonal
-    [[16, 18], [15, 19]],   //lower right diagonal
-    [[6, 10], [6, 10]],   //upper left large triangle
-    [[20, 24], [12, 16]],   //lower right large triangle
-    [[5, 10], [12, 17]],   //lower left large triangle
-    [[20, 25], [5, 10]],   //upper right large triangle
+    [13, 17, 21, 21],   //bottom middle line
+    [12, 14, 3, 7],   //upper left diagonal
+    [16, 18, 15, 19],   //lower right diagonal
+    [6, 10, 6, 10],   //upper left large triangle
+    [20, 24, 12, 16],   //lower right large triangle
+    [5, 10, 12, 17],   //lower left large triangle
+    [20, 25, 5, 10],   //upper right large triangle
   ]
 };
