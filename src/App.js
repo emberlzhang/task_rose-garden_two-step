@@ -427,6 +427,8 @@ const App = () => {
 
   // Function to convert data to CSV and download
   const saveChoicesToCSV = (data) => {
+    if (data == null) { return; }
+
     const csvRows = [];
     const headers = Object.keys(data[0]);
     console.log("CSV headers: " + headers)
