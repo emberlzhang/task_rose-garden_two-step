@@ -347,178 +347,180 @@ const App = () => {
       } else {
         console.warn(`No available positions for ${roseColor} roses.`);
       }
+    }
 
-      // Clear highlight after 2 seconds
-      setTimeout(() => {
-        setNewestRoseIndex(null);
-      }, 2000);
-    };
-
-    // Redraw roses when garden gets updated
-    useEffect(() => {
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext('2d');
-        ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
-
-        garden.forEach(rose => {
-          drawRose(ctx, rose);
-        });
-
-        console.log("garden ", garden)
-        console.log("newestRoseIndex ", newestRoseIndex)
-        if (newestRoseIndex !== null) {
-          console.log('Adding new rose:', garden[newestRoseIndex]);
-          // draw highlight circle around newest rose
-          const newRose = garden[newestRoseIndex];
-          ctx.beginPath();
-          ctx.arc(newRose.x + 16, newRose.y + 16, 32, 0, Math.PI * 2);
-          ctx.strokeStyle = 'white'; // Set the outline color
-          ctx.fillStyle = 'grey';
-          ctx.lineWidth = 5; // Set the outline width
-
-          ctx.stroke();
-        }
-      }
-    }, [garden]);
-
-    const drawRose = (ctx, rose) => {
-      const img = new Image();
-      img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
-      img.onload = () => {
-        ctx.save(); // Save the current canvas state
-
-        // Make roses appear round in shape instead of squares
-        ctx.beginPath();
-        ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
-        ctx.closePath();
-        ctx.clip();
-
-        // Draw the image within the clipped area
-        ctx.drawImage(img, rose.x, rose.y, 32, 32);
-
-        ctx.restore(); // Restore the previous canvas state
-      };
-    };
-
-    const HighlightOverlay = ({ rose, containerRef }) => {
-      const [position, setPosition] = useState({ left: 0, top: 0 });
-
-      useEffect(() => {
-        if (containerRef.current) {
-          const containerRect = containerRef.current.getBoundingClientRect();
-          setPosition({
-            left: rose.x,
-            top: rose.y
-          });
-        }
-      }, [rose, containerRef]);
-
-      return (
-        <div
-          className="newest-rose-indicator"
-          style={{
-            position: 'absolute',
-            left: `${position.left}px`,
-            top: `${position.top}px`,
-            width: '32px',
-            height: '32px',
-            border: '2px solid yellow',
-            borderRadius: '50%',
-            animation: 'fade-out 2s forwards',
-            boxSizing: 'border-box',
-            pointerEvents: 'none',
-          }}
-        />
-      );
-    };
-
-    const showGarden = () => {
-      return (
-        <div className="garden">
-          <h3>Your rose garden is growing...</h3>
-          <div ref={containerRef}>
-            <canvas
-              ref={canvasRef}
-              width={gardenWidth}
-              height={gardenHeight}
-              className="garden-canvas"
-            />
-
-          </div>
-        </div>
-      );
-    };
-
-
-    const showGameOver = () => {
-      return (
-        <div className="game-over">
-          <h2>Game Over</h2>
-          <p>Congratulations! You've completed the game.</p>
-          <p>Your final garden has {roseCount} roses.</p>
-          {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
-        </div>
-      );
-    };
-
-    // Function to convert data to CSV and download
-    const saveChoicesToCSV = (data) => {
-      if (data == null) { return; }
-
-      const csvRows = [];
-      const headers = Object.keys(data[0]);
-      console.log("CSV headers: " + headers)
-
-      csvRows.push(headers.join(','));
-
-      // Add each row of data
-      for (const row of data) {
-        csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
-      }
-
-      // Create CSV and trigger automatic download
-      const csvString = csvRows.join('\n');
-      const blob = new Blob([csvString], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'game-data.csv';
-      a.click();
-      URL.revokeObjectURL(url);
-    };
-
-    // Function to ensure data saves when window/tab is closed
-    useEffect(() => {
-      const handleBeforeUnload = (event) => {
-        // Trigger the saveChoicesToCSV function when the user is about to leave the page
-        event.preventDefault(); // Chrome requires this to show a confirmation dialog
-        saveChoicesToCSV(data);
-        event.returnValue = ''; // This is necessary for the confirmation dialog in some browsers
-      };
-
-      window.addEventListener('beforeunload', handleBeforeUnload);
-
-      return () => {
-        window.removeEventListener('beforeunload', handleBeforeUnload);
-      };
-    }, [data]);
-
-
-    return (
-      <div className="container">
-        <h1>Rose Garden Game</h1>
-        {stage === 'intake' && showIntakeForm()}
-        {stage === 'instructions' && showInstructions()}
-        {stage === 'transition' && showTransitionScreen()}
-        {stage === 'stage1' && showStage1()}
-        {stage === 'stage2' && showStage2()}
-        {stage === 'gameOver' && showGameOver()}
-        {stage !== 'intake' && stage !== 'instructions' && stage !== 'transition' && showGarden()}
-      </div>
-    );
-
-
+    // Clear highlight after 2 seconds
+    setTimeout(() => {
+      setNewestRoseIndex(null);
+    }, 2000);
 
   };
 
-  export default App;
+  // Redraw roses when garden gets updated
+  useEffect(() => {
+    if (canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
+
+      garden.forEach(rose => {
+        drawRose(ctx, rose);
+      });
+
+      console.log("garden ", garden)
+      console.log("newestRoseIndex ", newestRoseIndex)
+      if (newestRoseIndex !== null) {
+        console.log('Adding new rose:', garden[newestRoseIndex]);
+        // draw highlight circle around newest rose
+        const newRose = garden[newestRoseIndex];
+        ctx.beginPath();
+        ctx.arc(newRose.x + 16, newRose.y + 16, 32, 0, Math.PI * 2);
+        ctx.strokeStyle = 'white'; // Set the outline color
+        ctx.fillStyle = 'grey';
+        ctx.lineWidth = 5; // Set the outline width
+
+        ctx.stroke();
+      }
+    }
+  }, [garden]);
+
+  const drawRose = (ctx, rose) => {
+    const img = new Image();
+    img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
+    img.onload = () => {
+      ctx.save(); // Save the current canvas state
+
+      // Make roses appear round in shape instead of squares
+      ctx.beginPath();
+      ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
+      ctx.closePath();
+      ctx.clip();
+
+      // Draw the image within the clipped area
+      ctx.drawImage(img, rose.x, rose.y, 32, 32);
+
+      ctx.restore(); // Restore the previous canvas state
+    };
+  };
+
+  const HighlightOverlay = ({ rose, containerRef }) => {
+    const [position, setPosition] = useState({ left: 0, top: 0 });
+
+    useEffect(() => {
+      if (containerRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        setPosition({
+          left: rose.x,
+          top: rose.y
+        });
+      }
+    }, [rose, containerRef]);
+
+    return (
+      <div
+        className="newest-rose-indicator"
+        style={{
+          position: 'absolute',
+          left: `${position.left}px`,
+          top: `${position.top}px`,
+          width: '32px',
+          height: '32px',
+          border: '2px solid yellow',
+          borderRadius: '50%',
+          animation: 'fade-out 2s forwards',
+          boxSizing: 'border-box',
+          pointerEvents: 'none',
+        }}
+      />
+    );
+  };
+
+  const showGarden = () => {
+    return (
+      <div className="garden">
+        <h3>Your rose garden is growing...</h3>
+        <div ref={containerRef}>
+          <canvas
+            ref={canvasRef}
+            width={gardenWidth}
+            height={gardenHeight}
+            className="garden-canvas"
+          />
+
+        </div>
+      </div>
+    );
+  };
+
+
+  const showGameOver = () => {
+    return (
+      <div className="game-over">
+        <h2>Game Over</h2>
+        <p>Congratulations! You've completed the game.</p>
+        <p>Your final garden has {roseCount} roses.</p>
+        {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
+      </div>
+    );
+  };
+
+  // Function to convert data to CSV and download
+  const saveChoicesToCSV = (data) => {
+    if (data == null) { return; }
+
+    const csvRows = [];
+    const headers = Object.keys(data[0]);
+    console.log("CSV headers: " + headers)
+
+    csvRows.push(headers.join(','));
+
+    // Add each row of data
+    for (const row of data) {
+      csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
+    }
+
+    // Create CSV and trigger automatic download
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'game-data.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Function to ensure data saves when window/tab is closed
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      // Trigger the saveChoicesToCSV function when the user is about to leave the page
+      event.preventDefault(); // Chrome requires this to show a confirmation dialog
+      saveChoicesToCSV(data);
+      event.returnValue = ''; // This is necessary for the confirmation dialog in some browsers
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [data]);
+
+
+  return (
+    <div className="container">
+      <h1>Rose Garden Game</h1>
+      {stage === 'intake' && showIntakeForm()}
+      {stage === 'instructions' && showInstructions()}
+      {stage === 'transition' && showTransitionScreen()}
+      {stage === 'stage1' && showStage1()}
+      {stage === 'stage2' && showStage2()}
+      {stage === 'gameOver' && showGameOver()}
+      {stage !== 'intake' && stage !== 'instructions' && stage !== 'transition' && showGarden()}
+    </div>
+  );
+
+
+
+};
+
+export default App;
