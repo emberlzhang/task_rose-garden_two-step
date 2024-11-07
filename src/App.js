@@ -80,8 +80,9 @@ const App = () => {
       <ul>
         <li>In Stage 1, choose between two gardening stores.</li>
         <li>In Stage 2, choose between two gardeners to talk to.</li>
-        <li>Based on your choices, you will receive either a yellow rose or a red rose.</li>
-        <li>The rose will be added to your garden plot.</li>
+        <li>You will receive a rose, which will be added to your garden plot.</li>
+        <li>Roses can be either yellow or red.</li>
+        <li>Different gardeners have different color roses!</li>
         <li>You'll start with 10 practice rounds to get familiar with the game.</li>
         <li>After the practice, the real game will have 150 rounds.</li>
       </ul>
@@ -115,12 +116,11 @@ const App = () => {
   );
 
   const showStage1 = () => {
-
     return (<div className="stage">
       <h2>Step 1: Choose a Gardening Store</h2>
       <p>Press Left Arrow for Left Store, Right Arrow for Right Store</p>
       <span>
-        <img
+        <imgs
           src="/gardenstore-red.png"
           alt="Red Garden Store"
           className={`store-image ${selectedStore === 'Store 1' ? 'selected' : ''}`}
@@ -156,7 +156,7 @@ const App = () => {
     if (store === 'Store 1') {
       gardenerPair = randomValue < 0.8 ? gardenerPairs.pair1 : gardenerPairs.pair2;
     } else {
-      gardenerPair = randomValue < 0.2 ? gardenerPairs.pair1 : gardenerPairs.pair2;
+      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair2 : gardenerPairs.pair1;
     }
     setCurrentGardenerPair(gardenerPair);
 
@@ -259,230 +259,266 @@ const App = () => {
   };
 
   const addRoseToGarden = (roseColor) => {
-    const colorRegions = currentFlowerRegions[roseColor];
+    // Shuffle array helper function using Fisher-Yates algorithm
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    };
 
-    let currentRegionIndex = roseColor === 'red' ? redRegionIndex : yellowRegionIndex;
-    const occupiedPositions = roseColor === 'red' ? redOccupiedPositions : yellowOccupiedPositions;
-
-    // Function to get next available position in current region
-    const getNextPosition = (region) => {
+    // Get all valid positions in a region, now including region index
+    const getAllPositionsInRegion = (region, regionIndex, currentBeds, roseColor, occupiedPositions) => {
       const [xmin, xmax, ymin, ymax] = region;
-      for (let y = ymin - 1; y <= ymax - 1; y++) { // minus 1 to adjust for array indices
-        for (let x = xmin - 1; x <= xmax - 1; x++) { // minus 1 to adjust for array indices
+      const positions = [];
+
+      for (let y = ymin - 1; y <= ymax - 1; y++) {
+        for (let x = xmin - 1; x <= xmax - 1; x++) {
           const posKey = `${x},${y}`;
           if (currentBeds[y][x] === (roseColor === 'red' ? 1 : 2) &&
             !occupiedPositions.has(posKey)) {
-            return { x: x * 32, y: y * 32, posKey };
+            positions.push({
+              x: x * 32,
+              y: y * 32,
+              posKey,
+              regionIndex // Include the region index with the position
+            });
           }
         }
       }
-      return null; // Region is full
+      return positions;
     };
 
-    // Try to place rose in current region
-    let position = getNextPosition(colorRegions[currentRegionIndex]);
+    // Returns region index with position
+    const getNextRosePosition = (currentFlowerRegions, roseColor, currentBeds, redOccupiedPositions, yellowOccupiedPositions) => {
+      const colorRegions = [...currentFlowerRegions[roseColor]];
+      const occupiedPositions = roseColor === 'red' ? redOccupiedPositions : yellowOccupiedPositions;
 
-    // If current region is full, move to next available region
-    while (position === null && currentRegionIndex < colorRegions.length - 1) {
-      currentRegionIndex++;
-      position = getNextPosition(colorRegions[currentRegionIndex]);
-    }
+      // Create array of region indices and shuffle it
+      const regionIndices = Array.from({ length: colorRegions.length }, (_, i) => i);
+      shuffleArray(regionIndices);
 
-    // If we found a position, add the rose
-    if (position) {
-      const { x, y, posKey } = position;
-      const newRose = { roseColor, x, y };
+      // Try each region in random order
+      for (const regionIndex of regionIndices) {
+        const positions = getAllPositionsInRegion(
+          colorRegions[regionIndex],
+          regionIndex,
+          currentBeds,
+          roseColor,
+          occupiedPositions
+        );
 
-      setGarden(prevGarden => {
-        const newGarden = [...prevGarden, newRose];
-        setNewestRoseIndex(newGarden.length - 1);
-        return newGarden;
-      });
-
-      // Update occupied positions
-      if (roseColor === 'red') {
-        setRedOccupiedPositions(prev => new Set(prev).add(posKey));
-        setRedRegionIndex(currentRegionIndex);
-      } else {
-        setYellowOccupiedPositions(prev => new Set(prev).add(posKey));
-        setYellowRegionIndex(currentRegionIndex);
+        if (positions.length > 0) {
+          return positions[Math.floor(Math.random() * positions.length)];
+        }
       }
 
-    } else {
-      console.warn(`No available positions for ${roseColor} roses.`);
-    }
-
-    // Clear highlight after 2 seconds
-    setTimeout(() => {
-      setNewestRoseIndex(null);
-    }, 2000);
-  };
-
-  // Redraw roses when garden gets updated
-  useEffect(() => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
-
-      garden.forEach(rose => {
-        drawRose(ctx, rose);
-      });
-
-      console.log("garden ", garden)
-      console.log("newestRoseIndex ", newestRoseIndex)
-      if (newestRoseIndex !== null) {
-        console.log('Adding new rose:', garden[newestRoseIndex]);
-        // draw highlight circle around newest rose
-        const newRose = garden[newestRoseIndex];
-        ctx.beginPath();
-        ctx.arc(newRose.x + 16, newRose.y + 16, 32, 0, Math.PI * 2);
-        ctx.strokeStyle = 'white'; // Set the outline color
-        ctx.fillStyle = 'grey';
-        ctx.lineWidth = 5; // Set the outline width
-
-        ctx.stroke();
-      }
-    }
-  }, [garden]);
-
-  const drawRose = (ctx, rose) => {
-    const img = new Image();
-    img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
-    img.onload = () => {
-      ctx.save(); // Save the current canvas state
-
-      // Make roses appear round in shape instead of squares
-      ctx.beginPath();
-      ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
-      ctx.closePath();
-      ctx.clip();
-
-      // Draw the image within the clipped area
-      ctx.drawImage(img, rose.x, rose.y, 32, 32);
-
-      ctx.restore(); // Restore the previous canvas state
+      return null;
     };
-  };
 
-  const HighlightOverlay = ({ rose, containerRef }) => {
-    const [position, setPosition] = useState({ left: 0, top: 0 });
+    const handleRosePlacement = () => {
+      const position = getNextRosePosition(
+        currentFlowerRegions,
+        roseColor,
+        currentBeds,
+        redOccupiedPositions,
+        yellowOccupiedPositions
+      );
 
-    useEffect(() => {
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        setPosition({
-          left: rose.x,
-          top: rose.y
+      if (position) {
+        const { x, y, posKey, regionIndex } = position;
+        const newRose = { roseColor, x, y };
+
+        setGarden(prevGarden => {
+          const newGarden = [...prevGarden, newRose];
+          setNewestRoseIndex(newGarden.length - 1);
+          return newGarden;
         });
+
+        // Update occupied positions and region index in one go
+        if (roseColor === 'red') {
+          setRedOccupiedPositions(prev => new Set(prev).add(posKey));
+          setRedRegionIndex(regionIndex);
+        } else {
+          setYellowOccupiedPositions(prev => new Set(prev).add(posKey));
+          setYellowRegionIndex(regionIndex);
+        }
+      } else {
+        console.warn(`No available positions for ${roseColor} roses.`);
       }
-    }, [rose, containerRef]);
 
-    return (
-      <div
-        className="newest-rose-indicator"
-        style={{
-          position: 'absolute',
-          left: `${position.left}px`,
-          top: `${position.top}px`,
-          width: '32px',
-          height: '32px',
-          border: '2px solid yellow',
-          borderRadius: '50%',
-          animation: 'fade-out 2s forwards',
-          boxSizing: 'border-box',
-          pointerEvents: 'none',
-        }}
-      />
-    );
-  };
+      // Clear highlight after 2 seconds
+      setTimeout(() => {
+        setNewestRoseIndex(null);
+      }, 2000);
+    };
 
-  const showGarden = () => {
-    return (
-      <div className="garden">
-        <h3>Your rose garden is growing...</h3>
-        <div ref={containerRef}>
-          <canvas
-            ref={canvasRef}
-            width={gardenWidth}
-            height={gardenHeight}
-            className="garden-canvas"
-          />
+    // Redraw roses when garden gets updated
+    useEffect(() => {
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
 
+        garden.forEach(rose => {
+          drawRose(ctx, rose);
+        });
+
+        console.log("garden ", garden)
+        console.log("newestRoseIndex ", newestRoseIndex)
+        if (newestRoseIndex !== null) {
+          console.log('Adding new rose:', garden[newestRoseIndex]);
+          // draw highlight circle around newest rose
+          const newRose = garden[newestRoseIndex];
+          ctx.beginPath();
+          ctx.arc(newRose.x + 16, newRose.y + 16, 32, 0, Math.PI * 2);
+          ctx.strokeStyle = 'white'; // Set the outline color
+          ctx.fillStyle = 'grey';
+          ctx.lineWidth = 5; // Set the outline width
+
+          ctx.stroke();
+        }
+      }
+    }, [garden]);
+
+    const drawRose = (ctx, rose) => {
+      const img = new Image();
+      img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
+      img.onload = () => {
+        ctx.save(); // Save the current canvas state
+
+        // Make roses appear round in shape instead of squares
+        ctx.beginPath();
+        ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
+        ctx.closePath();
+        ctx.clip();
+
+        // Draw the image within the clipped area
+        ctx.drawImage(img, rose.x, rose.y, 32, 32);
+
+        ctx.restore(); // Restore the previous canvas state
+      };
+    };
+
+    const HighlightOverlay = ({ rose, containerRef }) => {
+      const [position, setPosition] = useState({ left: 0, top: 0 });
+
+      useEffect(() => {
+        if (containerRef.current) {
+          const containerRect = containerRef.current.getBoundingClientRect();
+          setPosition({
+            left: rose.x,
+            top: rose.y
+          });
+        }
+      }, [rose, containerRef]);
+
+      return (
+        <div
+          className="newest-rose-indicator"
+          style={{
+            position: 'absolute',
+            left: `${position.left}px`,
+            top: `${position.top}px`,
+            width: '32px',
+            height: '32px',
+            border: '2px solid yellow',
+            borderRadius: '50%',
+            animation: 'fade-out 2s forwards',
+            boxSizing: 'border-box',
+            pointerEvents: 'none',
+          }}
+        />
+      );
+    };
+
+    const showGarden = () => {
+      return (
+        <div className="garden">
+          <h3>Your rose garden is growing...</h3>
+          <div ref={containerRef}>
+            <canvas
+              ref={canvasRef}
+              width={gardenWidth}
+              height={gardenHeight}
+              className="garden-canvas"
+            />
+
+          </div>
         </div>
-      </div>
-    );
-  };
+      );
+    };
 
 
-  const showGameOver = () => {
+    const showGameOver = () => {
+      return (
+        <div className="game-over">
+          <h2>Game Over</h2>
+          <p>Congratulations! You've completed the game.</p>
+          <p>Your final garden has {roseCount} roses.</p>
+          {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
+        </div>
+      );
+    };
+
+    // Function to convert data to CSV and download
+    const saveChoicesToCSV = (data) => {
+      if (data == null) { return; }
+
+      const csvRows = [];
+      const headers = Object.keys(data[0]);
+      console.log("CSV headers: " + headers)
+
+      csvRows.push(headers.join(','));
+
+      // Add each row of data
+      for (const row of data) {
+        csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
+      }
+
+      // Create CSV and trigger automatic download
+      const csvString = csvRows.join('\n');
+      const blob = new Blob([csvString], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'game-data.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // Function to ensure data saves when window/tab is closed
+    useEffect(() => {
+      const handleBeforeUnload = (event) => {
+        // Trigger the saveChoicesToCSV function when the user is about to leave the page
+        event.preventDefault(); // Chrome requires this to show a confirmation dialog
+        saveChoicesToCSV(data);
+        event.returnValue = ''; // This is necessary for the confirmation dialog in some browsers
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }, [data]);
+
+
     return (
-      <div className="game-over">
-        <h2>Game Over</h2>
-        <p>Congratulations! You've completed the game.</p>
-        <p>Your final garden has {roseCount} roses.</p>
-        {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
+      <div className="container">
+        <h1>Rose Garden Game</h1>
+        {stage === 'intake' && showIntakeForm()}
+        {stage === 'instructions' && showInstructions()}
+        {stage === 'transition' && showTransitionScreen()}
+        {stage === 'stage1' && showStage1()}
+        {stage === 'stage2' && showStage2()}
+        {stage === 'gameOver' && showGameOver()}
+        {stage !== 'intake' && stage !== 'instructions' && stage !== 'transition' && showGarden()}
       </div>
     );
+
+
+
   };
 
-  // Function to convert data to CSV and download
-  const saveChoicesToCSV = (data) => {
-    if (data == null) { return; }
-
-    const csvRows = [];
-    const headers = Object.keys(data[0]);
-    console.log("CSV headers: " + headers)
-
-    csvRows.push(headers.join(','));
-
-    // Add each row of data
-    for (const row of data) {
-      csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
-    }
-
-    // Create CSV and trigger automatic download
-    const csvString = csvRows.join('\n');
-    const blob = new Blob([csvString], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'game-data.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Function to ensure data saves when window/tab is closed
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      // Trigger the saveChoicesToCSV function when the user is about to leave the page
-      event.preventDefault(); // Chrome requires this to show a confirmation dialog
-      saveChoicesToCSV(data);
-      event.returnValue = ''; // This is necessary for the confirmation dialog in some browsers
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [data]);
-
-
-  return (
-    <div className="container">
-      <h1>Rose Garden Game</h1>
-      {stage === 'intake' && showIntakeForm()}
-      {stage === 'instructions' && showInstructions()}
-      {stage === 'transition' && showTransitionScreen()}
-      {stage === 'stage1' && showStage1()}
-      {stage === 'stage2' && showStage2()}
-      {stage === 'gameOver' && showGameOver()}
-      {stage !== 'intake' && stage !== 'instructions' && stage !== 'transition' && showGarden()}
-    </div>
-  );
-
-
-
-};
-
-export default App;
+  export default App;
