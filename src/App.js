@@ -120,7 +120,7 @@ const App = () => {
       <h2>Step 1: Choose a Gardening Store</h2>
       <p>Press Left Arrow for Left Store, Right Arrow for Right Store</p>
       <span>
-        <imgs
+        <img
           src="/gardenstore-red.png"
           alt="Red Garden Store"
           className={`store-image ${selectedStore === 'Store 1' ? 'selected' : ''}`}
@@ -349,6 +349,9 @@ const App = () => {
       }
     }
 
+    // Call function to add rose
+    handleRosePlacement();
+
     // Clear highlight after 2 seconds
     setTimeout(() => {
       setNewestRoseIndex(null);
@@ -358,49 +361,56 @@ const App = () => {
 
   // Redraw roses when garden gets updated
   useEffect(() => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
+    const drawGarden = async () => {
+      if (canvasRef.current) {
+        const ctx = canvasRef.current.getContext('2d');
+        ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
 
-      garden.forEach(rose => {
-        drawRose(ctx, rose);
-      });
+        // Draw all roses first
+        for (const rose of garden) {
+          await drawRose(ctx, rose);
+        }
 
-      console.log("garden ", garden)
-      console.log("newestRoseIndex ", newestRoseIndex)
-      if (newestRoseIndex !== null) {
-        console.log('Adding new rose:', garden[newestRoseIndex]);
-        // draw highlight circle around newest rose
-        const newRose = garden[newestRoseIndex];
-        ctx.beginPath();
-        ctx.arc(newRose.x + 16, newRose.y + 16, 32, 0, Math.PI * 2);
-        ctx.strokeStyle = 'white'; // Set the outline color
-        ctx.fillStyle = 'grey';
-        ctx.lineWidth = 5; // Set the outline width
+        console.log("garden ", garden)
+        console.log("newestRoseIndex ", newestRoseIndex)
 
-        ctx.stroke();
+        // Draw highlight circle around new rose after roses are loaded
+        if (newestRoseIndex !== null) {
+          console.log('Adding new rose:', garden[newestRoseIndex]);
+          const newRose = garden[newestRoseIndex];
+          ctx.beginPath();
+          ctx.arc(newRose.x + 16, newRose.y + 16, 32, 0, Math.PI * 2);
+          ctx.strokeStyle = 'white'; // Set the outline color
+          ctx.fillStyle = 'grey';
+          ctx.lineWidth = 5; // Set the outline width
+          ctx.stroke();
+        }
       }
-    }
-  }, [garden]);
+    };
+
+    drawGarden();
+  }, [garden, newestRoseIndex]);
 
   const drawRose = (ctx, rose) => {
-    const img = new Image();
-    img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
-    img.onload = () => {
-      ctx.save(); // Save the current canvas state
-
-      // Make roses appear round in shape instead of squares
-      ctx.beginPath();
-      ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
-      ctx.closePath();
-      ctx.clip();
-
-      // Draw the image within the clipped area
-      ctx.drawImage(img, rose.x, rose.y, 32, 32);
-
-      ctx.restore(); // Restore the previous canvas state
-    };
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
+      img.onload = () => {
+        ctx.save(); // Save the current canvas state
+        // Make roses appear round in shape instead of squares
+        ctx.beginPath();
+        ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
+        ctx.closePath();
+        ctx.clip();
+        // Draw the image within the clipped area
+        ctx.drawImage(img, rose.x, rose.y, 32, 32);
+        ctx.restore(); // Restore the previous canvas state
+        resolve();
+      };
+    });
   };
+
+
 
   const HighlightOverlay = ({ rose, containerRef }) => {
     const [position, setPosition] = useState({ left: 0, top: 0 });
@@ -465,18 +475,41 @@ const App = () => {
 
   // Function to convert data to CSV and download
   const saveChoicesToCSV = (data) => {
-    if (data == null) { return; }
+    if (!data?.length) return;
 
-    const csvRows = [];
-    const headers = Object.keys(data[0]);
-    console.log("CSV headers: " + headers)
-
-    csvRows.push(headers.join(','));
-
-    // Add each row of data
-    for (const row of data) {
-      csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
+    const flattenObject = (obj) => {
+      const flattened = {};
+      Object.keys(obj).forEach(key => {
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          const nested = flattenObject(obj[key]);
+          Object.keys(nested).forEach(nestedKey => {
+            flattened[`${key}_${nestedKey}`] = nested[nestedKey];
+          });
+        } else {
+          flattened[key] = obj[key];
+        }
+      });
+      return flattened;
     }
+
+    const flattenedData = data.map(row => flattenObject(row));
+    const headers = [...new Set(flattenedData.flatMap(Object.keys))];
+    console.log("CSV headers: " + headers)
+    const csvRows = [
+      headers.join(','),
+      ...flattenedData.map(row =>
+        headers.map(header =>
+          JSON.stringify(row[header] ?? '').replace(/"/g, '""')
+        ).join(',')
+      )
+    ];
+
+    // const headers = Object.keys(data[0]);
+    // csvRows.push(headers.join(','));
+    // // Add each row of data
+    // for (const row of data) {
+    //   csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
+    // }
 
     // Create CSV and trigger automatic download
     const csvString = csvRows.join('\n');
@@ -484,7 +517,7 @@ const App = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'game-data.csv';
+    a.download = `rose_garden_game_${subjectId}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
