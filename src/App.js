@@ -35,6 +35,12 @@ const App = () => {
     pair1: ['/gardener_1A.png', '/gardener_1B.png'],
     pair2: ['/gardener_2A.png', '/gardener_2B.png']
   };
+  const roseColorProbabilities = {
+    'gardener_1A': { red: 0.8, yellow: 0.2 },
+    'gardener_1B': { red: 0.2, yellow: 0.8 },
+    'gardener_2A': { red: 0.6, yellow: 0.4 },
+    'gardener_2B': { red: 0.4, yellow: 0.6 }
+  };
   const [keyPressEnabled, setKeyPressEnabled] = useState(false);
 
   const PRACTICE_ROUNDS = 10;
@@ -224,6 +230,14 @@ const App = () => {
   const chooseGardener = (gardener, keypress) => {
     // Save gardener choice
     setSelectedGardener(gardener);
+
+    // Determine the selected gardener's ID from the current pair for rose probability lookup
+    //// Details: checks whether the user selection was Gardener 1 (the left side gardener). If so, choose the first element in gardener pair, if not, choose second gardener in gardener pair
+    const gardenerId = currentGardenerPair[gardener === 'Gardener 1' ? 0 : 1].split('/').pop().split('.')[0];
+
+    // Determine rose color based on the gardener's probability
+    const roseColor = Math.random() < roseColorProbabilities[gardenerId].red ? 'red' : 'yellow';
+    // Add data
     setData(prevData => [...prevData, {
       timestamp: new Date().toISOString(),
       stage: 'stage2',
@@ -237,7 +251,6 @@ const App = () => {
       setSelectedGardener('');
 
       // Add rose to garden
-      const roseColor = Math.random() < 0.5 ? 'yellow' : 'red';
       addRoseToGarden(roseColor);
       setRoseCount(roseCount + 1);
 
@@ -258,20 +271,24 @@ const App = () => {
 
   };
 
-  const addRoseToGarden = (roseColor) => {
-    // Shuffle array helper function using Fisher-Yates algorithm
-    const shuffleArray = (array) => {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    };
+  const addRoseToGarden = function (roseColor) {
+    if (!addRoseToGarden.currentRegion) {
+      // Static variable to track current region and remaining positions
+      addRoseToGarden.currentRegion = {
+        red: null,
+        yellow: null,
+        redPositions: new Set(),
+        yellowPositions: new Set()
+      };
+    }
 
     // Get all valid positions in a region, now including region index
-    const getAllPositionsInRegion = (region, regionIndex, currentBeds, roseColor, occupiedPositions) => {
+    const getAllPositionsInRegion = (region, regionIndex, roseColor) => {
       const [xmin, xmax, ymin, ymax] = region;
       const positions = [];
+      const occupiedPositions = roseColor === 'red' ?
+        addRoseToGarden.currentRegion.redPositions :
+        addRoseToGarden.currentRegion.yellowPositions;
 
       for (let y = ymin - 1; y <= ymax - 1; y++) {
         for (let x = xmin - 1; x <= xmax - 1; x++) {
@@ -291,22 +308,23 @@ const App = () => {
     };
 
     // Returns region index with position
-    const getNextRosePosition = (currentFlowerRegions, roseColor, currentBeds, redOccupiedPositions, yellowOccupiedPositions) => {
+    const getNextRosePosition = () => {
+      // Check if currentFlowerRegions exists and has the color property
+      if (!currentFlowerRegions || !currentFlowerRegions[roseColor]) {
+        console.warn(`No regions defined for ${roseColor} roses`);
+        return null;
+      }
+      console.log("currentFlowerRegions: ")
+      console.log(currentFlowerRegions)
       const colorRegions = [...currentFlowerRegions[roseColor]];
-      const occupiedPositions = roseColor === 'red' ? redOccupiedPositions : yellowOccupiedPositions;
+      const currentRegionIndex = addRoseToGarden.currentRegion[roseColor];
 
-      // Create array of region indices and shuffle it
-      const regionIndices = Array.from({ length: colorRegions.length }, (_, i) => i);
-      shuffleArray(regionIndices);
-
-      // Try each region in random order
-      for (const regionIndex of regionIndices) {
+      if (currentRegionIndex !== null) {
         const positions = getAllPositionsInRegion(
-          colorRegions[regionIndex],
-          regionIndex,
+          colorRegions[currentRegionIndex],
+          currentRegionIndex,
           currentBeds,
-          roseColor,
-          occupiedPositions
+          roseColor
         );
 
         if (positions.length > 0) {
@@ -314,50 +332,60 @@ const App = () => {
         }
       }
 
+      // Pick new region if needed
+      for (let i = 0; i < colorRegions.length; i++) {
+        const regionIndex = Math.floor(Math.random() * colorRegions.length);
+        const positions = getAllPositionsInRegion(
+          colorRegions[regionIndex],
+          regionIndex,
+          currentBeds,
+          roseColor
+        );
+
+        if (positions.length > 0) {
+          addRoseToGarden.currentRegion[roseColor] = regionIndex;
+          return positions[Math.floor(Math.random() * positions.length)];
+        }
+      }
+
       return null;
     };
 
-    const handleRosePlacement = () => {
-      const position = getNextRosePosition(
-        currentFlowerRegions,
-        roseColor,
-        currentBeds,
-        redOccupiedPositions,
-        yellowOccupiedPositions
-      );
+    // Handle actual rose placement
+    const position = getNextRosePosition();
 
-      if (position) {
-        const { x, y, posKey, regionIndex } = position;
-        const newRose = { roseColor, x, y };
+    if (position) {
+      const { x, y, posKey, regionIndex } = position;
+      const newRose = { roseColor, x, y };
 
-        setGarden(prevGarden => {
-          const newGarden = [...prevGarden, newRose];
-          setNewestRoseIndex(newGarden.length - 1);
-          return newGarden;
-        });
-
-        // Update occupied positions and region index in one go
-        if (roseColor === 'red') {
-          setRedOccupiedPositions(prev => new Set(prev).add(posKey));
-          setRedRegionIndex(regionIndex);
-        } else {
-          setYellowOccupiedPositions(prev => new Set(prev).add(posKey));
-          setYellowRegionIndex(regionIndex);
-        }
+      // Update occupied positions
+      if (roseColor === 'red') {
+        addRoseToGarden.currentRegion.redPositions.add(posKey);
       } else {
-        console.warn(`No available positions for ${roseColor} roses.`);
+        addRoseToGarden.currentRegion.yellowPositions.add(posKey);
       }
+
+      setGarden(prevGarden => {
+        const newGarden = [...prevGarden, newRose];
+        setNewestRoseIndex(newGarden.length - 1);
+        return newGarden;
+      });
+
+      if (roseColor === 'red') {
+        setRedRegionIndex(regionIndex);
+      } else {
+        setYellowRegionIndex(regionIndex);
+      }
+    } else {
+      console.warn(`No available positions for ${roseColor} roses.`);
     }
-
-    // Call function to add rose
-    handleRosePlacement();
-
     // Clear highlight after 2 seconds
     setTimeout(() => {
       setNewestRoseIndex(null);
     }, 2000);
 
   };
+
 
   // Redraw roses when garden gets updated
   useEffect(() => {
@@ -371,7 +399,6 @@ const App = () => {
           await drawRose(ctx, rose);
         }
 
-        console.log("garden ", garden)
         console.log("newestRoseIndex ", newestRoseIndex)
 
         // Draw highlight circle around new rose after roses are loaded
@@ -392,22 +419,22 @@ const App = () => {
   }, [garden, newestRoseIndex]);
 
   const drawRose = (ctx, rose) => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
-      img.onload = () => {
-        ctx.save(); // Save the current canvas state
-        // Make roses appear round in shape instead of squares
-        ctx.beginPath();
-        ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
-        ctx.closePath();
-        ctx.clip();
-        // Draw the image within the clipped area
-        ctx.drawImage(img, rose.x, rose.y, 32, 32);
-        ctx.restore(); // Restore the previous canvas state
-        resolve();
-      };
-    });
+    // return new Promise((resolve) => {
+    const img = new Image();
+    img.src = rose.roseColor === 'yellow' ? '/yellow_rose.png' : '/red_rose.png';
+    img.onload = () => {
+      ctx.save(); // Save the current canvas state
+      // Make roses appear round in shape instead of squares
+      ctx.beginPath();
+      ctx.arc(rose.x + 16, rose.y + 16, 16, 0, Math.PI * 2); // Create a circle with a radius of 16px
+      ctx.closePath();
+      ctx.clip();
+      // Draw the image within the clipped area
+      ctx.drawImage(img, rose.x, rose.y, 32, 32);
+      ctx.restore(); // Restore the previous canvas state
+      // resolve();
+    };
+    // });
   };
 
 
