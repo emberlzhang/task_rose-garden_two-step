@@ -3,14 +3,8 @@ import './App.css';
 import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
 // import { flowerSearch } from './flowerSearch.js';
 
-const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
-const gardenHeight = 32 * 21; // the last number should be number of rows in flowerBeds array
-
-const intertrialinterval1 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 1 choice, before stage 2 display
-const intertrialinterval2 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 2 choice, before adding rose
-
-
 const App = () => {
+  // CONSTANT VARIABLES
   const [stage, setStage] = useState('intake');
   const [subjectId, setSubjectId] = useState('');
   const [garden, setGarden] = useState([]);
@@ -31,21 +25,46 @@ const App = () => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [data, setData] = useState([]); // Stores game data and user choices
+  const [keyPressEnabled, setKeyPressEnabled] = useState(false);
+
+  // CONSTANT GAME VALUES
+  const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
+  const gardenHeight = 32 * 21; // the last number should be number of rows in flowerBeds array
+  const practiceRounds = 10;
+  const maxRounds = 30; // need to set to 150 for real game
+  const intertrialinterval1 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 1 choice, before stage 2 display
+  const intertrialinterval2 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 2 choice, before adding rose
   const gardenerPairs = {
     pair1: ['/gardener_1A.png', '/gardener_1B.png'],
     pair2: ['/gardener_2A.png', '/gardener_2B.png']
   };
-  const roseColorProbabilities = {
-    'gardener_1A': { red: 0.8, yellow: 0.2 },
-    'gardener_1B': { red: 0.2, yellow: 0.8 },
-    'gardener_2A': { red: 0.6, yellow: 0.4 },
-    'gardener_2B': { red: 0.4, yellow: 0.6 }
-  };
-  const [keyPressEnabled, setKeyPressEnabled] = useState(false);
+  const roseColorConditions = [
+    {
+      'gardener_1A': { red: 0.8, yellow: 0.2 },
+      'gardener_1B': { red: 0.2, yellow: 0.8 },
+      'gardener_2A': { red: 0.6, yellow: 0.4 },
+      'gardener_2B': { red: 0.4, yellow: 0.6 }
+    },
+    {
+      'gardener_1A': { red: 0.6, yellow: 0.4 },
+      'gardener_1B': { red: 0.2, yellow: 0.8 },
+      'gardener_2A': { red: 0.8, yellow: 0.2 },
+      'gardener_2B': { red: 0.4, yellow: 0.6 }
+    },
+    {
+      'gardener_1A': { red: 0.6, yellow: 0.4 },
+      'gardener_1B': { red: 0.4, yellow: 0.6 },
+      'gardener_2A': { red: 0.8, yellow: 0.2 },
+      'gardener_2B': { red: 0.2, yellow: 0.8 }
+    }
+  ];
+  // Choose a random rose color condition from above
+  const roseColorProbabilities = roseColorConditions[Math.floor(Math.random() * roseColorConditions.length)];
+  console.log("rose probabilities: ", roseColorProbabilities);
 
-  const PRACTICE_ROUNDS = 10;
-  const MAX_ROUNDS = 150;
 
+
+  // GAME METHODS
 
   const showIntakeForm = () => (
     <div className="intake-form">
@@ -137,7 +156,7 @@ const App = () => {
           className={`store-image ${selectedStore === 'Store 2' ? 'selected' : ''}`}
         />
       </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
+      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? practiceRounds : maxRounds}</p>
     </div>)
   };
 
@@ -169,7 +188,7 @@ const App = () => {
     // Save data after setting the store and gardener pair
     setData(prevData => [...prevData, {
       timestamp: new Date().toISOString(),
-      stage: 'stage1',
+      stage: isPractice ? 'stage1Practice' : 'stage1', // Adjust stage based on isPractice
       userChoice: keypress,
       selectedStore: store,
       gardenerPair: gardenerPair,
@@ -194,7 +213,7 @@ const App = () => {
           />
         </div>
       </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
+      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? practiceRounds : maxRounds}</p>
     </div>
   );
 
@@ -240,10 +259,10 @@ const App = () => {
     // Add data
     setData(prevData => [...prevData, {
       timestamp: new Date().toISOString(),
-      stage: 'stage2',
+      stage: isPractice ? 'stage2Practice' : 'stage2', // Adjust stage based on isPractice
       userChoice: keypress,
       gardenerPair: currentGardenerPair,
-      selectedGardener: gardener
+      selectedGardener: gardenerId
     }])
 
     setTimeout(() => {
@@ -259,9 +278,9 @@ const App = () => {
       setRoundCount(newRoundCount);
 
       // Check if practice or game should end
-      if (isPractice && newRoundCount >= PRACTICE_ROUNDS) {
+      if (isPractice && newRoundCount >= practiceRounds) {
         setStage('transition'); // go to transition screen before real game
-      } else if (!isPractice && newRoundCount >= MAX_ROUNDS) {
+      } else if (!isPractice && newRoundCount >= maxRounds) {
         setStage('gameOver'); // end the game
       } else {
         // proceed to next round
@@ -507,36 +526,34 @@ const App = () => {
     const flattenObject = (obj) => {
       const flattened = {};
       Object.keys(obj).forEach(key => {
-        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          const nested = flattenObject(obj[key]);
-          Object.keys(nested).forEach(nestedKey => {
-            flattened[`${key}_${nestedKey}`] = nested[nestedKey];
-          });
+        if (typeof obj[key] === 'object' && obj[key] !== null) {
+          if (Array.isArray(obj[key])) {
+            // Join array elements with a separator, removing extraneous quotes
+            flattened[key] = obj[key].join(" | ");
+          } else {
+            const nested = flattenObject(obj[key]);
+            Object.keys(nested).forEach(nestedKey => {
+              flattened[`${key}_${nestedKey}`] = nested[nestedKey];
+            });
+          }
         } else {
-          flattened[key] = obj[key];
+          flattened[key] = obj[key] || '';  // Ensure empty fields don't have quotes
         }
       });
       return flattened;
-    }
+    };
 
     const flattenedData = data.map(row => flattenObject(row));
     const headers = [...new Set(flattenedData.flatMap(Object.keys))];
-    console.log("CSV headers: " + headers)
     const csvRows = [
       headers.join(','),
       ...flattenedData.map(row =>
         headers.map(header =>
-          JSON.stringify(row[header] ?? '').replace(/"/g, '""')
+          // Remove JSON.stringify for basic string values to avoid extra quotes
+          typeof row[header] === 'string' ? row[header] : JSON.stringify(row[header] ?? '')
         ).join(',')
       )
     ];
-
-    // const headers = Object.keys(data[0]);
-    // csvRows.push(headers.join(','));
-    // // Add each row of data
-    // for (const row of data) {
-    //   csvRows.push(headers.map(header => JSON.stringify(row[header], (key, value) => value || '')).join(','));
-    // }
 
     // Create CSV and trigger automatic download
     const csvString = csvRows.join('\n');
@@ -548,6 +565,8 @@ const App = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+
 
   // Function to ensure data saves when window/tab is closed
   useEffect(() => {
