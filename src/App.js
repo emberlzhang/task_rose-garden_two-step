@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
-// import { flowerSearch } from './flowerSearch.js';
+import { gardenManager } from './gardenManager.js';
 
 const App = () => {
   // CONSTANT VARIABLES
   const [stage, setStage] = useState('intake');
   const [subjectId, setSubjectId] = useState('');
+  const [gardenManager, setGardenManager] = useState(null);
   const [garden, setGarden] = useState([]);
   const [error, setError] = useState('');
   const [roseCount, setRoseCount] = useState(0);
@@ -15,13 +16,15 @@ const App = () => {
   const [selectedStore, setSelectedStore] = useState('');
   const [currentGardenerPair, setCurrentGardenerPair] = useState([]);
   const [selectedGardener, setSelectedGardener] = useState([]);
+  const [newestRoseIndex, setNewestRoseIndex] = useState(null);
+
   const [currentBeds, setCurrentBeds] = useState(practiceFlowerBeds);
   const [currentFlowerRegions, setCurrentFlowerRegions] = useState(practiceFlowerRegions);
-  const [newestRoseIndex, setNewestRoseIndex] = useState(null);
   const [redRegionIndex, setRedRegionIndex] = useState(0);
   const [yellowRegionIndex, setYellowRegionIndex] = useState(0);
   const [redOccupiedPositions, setRedOccupiedPositions] = useState(new Set());
   const [yellowOccupiedPositions, setYellowOccupiedPositions] = useState(new Set());
+
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [data, setData] = useState([]); // Stores game data and user choices
@@ -67,6 +70,14 @@ const App = () => {
   console.log("rose probabilities: ", roseColorProbabilities);
   const chosenRoseProbabilityCondition = randomIndex + 1;
 
+  // Setup GardenManager before game start
+  useEffect(() => {
+    // Initialize garden manager when component mounts
+    setGardenManager(new GardenManager(
+      isPractice ? practiceFlowerBeds : flowerBeds,
+      isPractice ? practiceFlowerRegions : flowerRegions
+    ));
+  }, [isPractice]);
 
   // GAME METHODS
 
@@ -341,127 +352,38 @@ const App = () => {
   };
 
   const addRoseToGarden = (roseColor) => {
-    // Set a static variable to track current region and remaining positions
-    if (!addRoseToGarden.currentRegion) {
-      addRoseToGarden.currentRegion = {
-        red: null,
-        yellow: null,
-        redPositions: new Set(),
-        yellowPositions: new Set()
-      };
-    }
+    if (!gardenManager) return null;
 
-    // Helper function to get all valid positions in a region
-    const getAllPositionsInRegion = (region, regionIndex, roseColor) => {
-      const [xmin, xmax, ymin, ymax] = region;
-      const positions = [];
-      const occupiedPositions = roseColor === 'red' ?
-        addRoseToGarden.currentRegion.redPositions :
-        addRoseToGarden.currentRegion.yellowPositions;
-
-      for (let y = ymin - 1; y <= ymax - 1; y++) {
-        for (let x = xmin - 1; x <= xmax - 1; x++) {
-          const posKey = `${x},${y}`;
-          if (currentBeds[y][x] === (roseColor === 'red' ? 1 : 2) &&
-            !occupiedPositions.has(posKey)) {
-            positions.push({
-              x: x * 32, // Scale to pixel coordinates
-              y: y * 32,
-              posKey,
-              regionIndex
-            });
-          }
-        }
-      }
-      return positions;
-    };
-
-    // Helper function to find next available rose position
-    const getNextRosePosition = () => {
-      // Check if currentFlowerRegions exists and has the color property
-      if (!currentFlowerRegions || !currentFlowerRegions[roseColor]) {
-        console.warn(`No regions defined for ${roseColor} roses`);
-        return null;
-      }
-
-      console.log("currentFlowerRegions: ")
-      console.log(currentFlowerRegions)
-
-      const colorRegions = [...currentFlowerRegions[roseColor]];
-      const currentRegionIndex = addRoseToGarden.currentRegion[roseColor];
-
-      // First try current region if it exists
-      if (currentRegionIndex !== null) {
-        const positions = getAllPositionsInRegion(
-          colorRegions[currentRegionIndex],
-          currentRegionIndex,
-          // currentBeds,
-          roseColor
-        );
-
-        if (positions.length > 0) {
-          return positions[Math.floor(Math.random() * positions.length)];
-        }
-      }
-
-      // If current region is full or doesn't exist, go to next region
-      for (let i = 0; i < colorRegions.length; i++) {
-        const regionIndex = Math.floor(Math.random() * colorRegions.length);
-        const positions = getAllPositionsInRegion(
-          colorRegions[regionIndex],
-          regionIndex,
-          // currentBeds,
-          roseColor
-        );
-
-        if (positions.length > 0) {
-          addRoseToGarden.currentRegion[roseColor] = regionIndex;
-          return positions[Math.floor(Math.random() * positions.length)];
-        }
-      }
-
+    const position = gardenManager.addRose(roseColor);
+    if (!position) {
+      console.warn(`No available positions for ${roseColor} roses.`);
       return null;
-    };
-
-    // Get position for new rose
-    const position = getNextRosePosition();
-
-    if (position) {
-      const { x, y, posKey, regionIndex } = position;
-      const newRose = { roseColor, x, y };
-
-      // Update set of occupied positions
-      if (roseColor === 'red') {
-        addRoseToGarden.currentRegion.redPositions.add(posKey);
-      } else {
-        addRoseToGarden.currentRegion.yellowPositions.add(posKey);
-      }
-
-      setGarden(prevGarden => {
-        const newGarden = [...prevGarden, newRose];
-        setNewestRoseIndex(newGarden.length - 1);
-        return newGarden;
-      });
-
-      // Update region indices
-      if (roseColor === 'red') {
-        setRedRegionIndex(regionIndex);
-      } else {
-        setYellowRegionIndex(regionIndex);
-      }
-
-      // Return position for data recording
-      return { x, y };
     }
 
-    console.warn(`No available positions for ${roseColor} roses.`);
+    const newRose = {
+      roseColor,
+      x: position.x,
+      y: position.y
+    };
+
+    setGarden(prevGarden => {
+      const newGarden = [...prevGarden, newRose];
+      setNewestRoseIndex(newGarden.length - 1);
+      return newGarden;
+    });
+
+    if (roseColor === 'red') {
+      setRedRegionIndex(position.regionIndex);
+    } else {
+      setYellowRegionIndex(position.regionIndex);
+    }
+
     // Clear highlight after 2 seconds
     setTimeout(() => {
       setNewestRoseIndex(null);
     }, 2000);
 
-    return null;
-
+    return position;
   };
 
 
