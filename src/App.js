@@ -90,12 +90,13 @@ const App = () => {
       setError('Please enter a subject ID');
     } else {
       const startTime = Date.now();
+      const startTimestamp = new Date().toISOString();
       setGameStartTime(startTime);
       setError('');
       setStage('instructions');
       setData([{
         gameStartTime: startTime,
-        // timestamp: new Date().toISOString(),
+        timestamp: startTimestamp,
         stage: 'intake',
         subjectId: subjectId,
       }]);
@@ -259,7 +260,7 @@ const App = () => {
       const stage1Time = Date.now();
       setStage1StartTime(stage1Time);
       setData(prevData => [...prevData, {
-        timestamp: new Date().toISOString(),
+        // timestamp: new Date().toISOString(),
         stage: 'stage1Start',
         timeFromtStart: stage1Time - gameStartTime
       }]);
@@ -267,7 +268,7 @@ const App = () => {
       const stage2Time = Date.now();
       setStage2StartTime(stage2Time);
       setData(prevData => [...prevData, {
-        timestamp: new Date().toISOString(),
+        // timestamp: new Date().toISOString(),
         stage: 'stage2Start',
         timeFromStart: stage2Time - gameStartTime
       }]);
@@ -311,8 +312,10 @@ const App = () => {
       // Add rose to garden and record its position
       const rosePosition = addRoseToGarden(roseColor);
       if (rosePosition) {
+        const currentTime = Date.now();
         setData(prevData => [...prevData, {
           // timestamp: new Date().toISOString(),
+          timeFromStart: currentTime - gameStartTime,
           stage: 'reward',
           roseColor: roseColor,
           rosePosition: { x: rosePosition.x, y: rosePosition.y }
