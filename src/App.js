@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
-import { gardenManager } from './gardenManager.js';
+import { GardenManager } from './gardenManager.js';
 
 const App = () => {
   // CONSTANT VARIABLES
