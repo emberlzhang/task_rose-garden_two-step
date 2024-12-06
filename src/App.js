@@ -262,7 +262,7 @@ const App = () => {
       setData(prevData => [...prevData, {
         // timestamp: new Date().toISOString(),
         stage: 'stage1Start',
-        timeFromtStart: stage1Time - gameStartTime
+        timeFromStart: stage1Time - gameStartTime
       }]);
     } else if (stage === 'stage2') {
       const stage2Time = Date.now();
@@ -455,11 +455,12 @@ const App = () => {
     }
 
     console.warn(`No available positions for ${roseColor} roses.`);
+    // Clear highlight after 2 seconds
+    setTimeout(() => {
+      setNewestRoseIndex(null);
+    }, 2000);
+
     return null;
-    // // Clear highlight after 2 seconds
-    // setTimeout(() => {
-    //   setNewestRoseIndex(null);
-    // }, 2000);
 
   };
 
