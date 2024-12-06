@@ -338,8 +338,8 @@ const App = () => {
   };
 
   const addRoseToGarden = (roseColor) => {
+    // Set a static variable to track current region and remaining positions
     if (!addRoseToGarden.currentRegion) {
-      // Static variable to track current region and remaining positions
       addRoseToGarden.currentRegion = {
         red: null,
         yellow: null,
@@ -348,7 +348,7 @@ const App = () => {
       };
     }
 
-    // Get all valid positions in a region, now including region index
+    // Helper function to get all valid positions in a region
     const getAllPositionsInRegion = (region, regionIndex, roseColor) => {
       const [xmin, xmax, ymin, ymax] = region;
       const positions = [];
@@ -362,10 +362,10 @@ const App = () => {
           if (currentBeds[y][x] === (roseColor === 'red' ? 1 : 2) &&
             !occupiedPositions.has(posKey)) {
             positions.push({
-              x: x * 32,
+              x: x * 32, // Scale to pixel coordinates
               y: y * 32,
               posKey,
-              regionIndex // Include the region index with the position
+              regionIndex
             });
           }
         }
@@ -373,23 +373,26 @@ const App = () => {
       return positions;
     };
 
-    // Returns region index with position
+    // Helper function to find next available rose position
     const getNextRosePosition = () => {
       // Check if currentFlowerRegions exists and has the color property
       if (!currentFlowerRegions || !currentFlowerRegions[roseColor]) {
         console.warn(`No regions defined for ${roseColor} roses`);
         return null;
       }
+
       console.log("currentFlowerRegions: ")
       console.log(currentFlowerRegions)
+
       const colorRegions = [...currentFlowerRegions[roseColor]];
       const currentRegionIndex = addRoseToGarden.currentRegion[roseColor];
 
+      // First try current region if it exists
       if (currentRegionIndex !== null) {
         const positions = getAllPositionsInRegion(
           colorRegions[currentRegionIndex],
           currentRegionIndex,
-          currentBeds,
+          // currentBeds,
           roseColor
         );
 
@@ -398,13 +401,13 @@ const App = () => {
         }
       }
 
-      // Pick new region if needed
+      // If current region is full or doesn't exist, go to next region
       for (let i = 0; i < colorRegions.length; i++) {
         const regionIndex = Math.floor(Math.random() * colorRegions.length);
         const positions = getAllPositionsInRegion(
           colorRegions[regionIndex],
           regionIndex,
-          currentBeds,
+          // currentBeds,
           roseColor
         );
 
@@ -417,14 +420,14 @@ const App = () => {
       return null;
     };
 
-    // Handle actual rose placement
+    // Get position for new rose
     const position = getNextRosePosition();
 
     if (position) {
       const { x, y, posKey, regionIndex } = position;
       const newRose = { roseColor, x, y };
 
-      // Update occupied positions
+      // Update set of occupied positions
       if (roseColor === 'red') {
         addRoseToGarden.currentRegion.redPositions.add(posKey);
       } else {
@@ -437,18 +440,23 @@ const App = () => {
         return newGarden;
       });
 
+      // Update region indices
       if (roseColor === 'red') {
         setRedRegionIndex(regionIndex);
       } else {
         setYellowRegionIndex(regionIndex);
       }
-    } else {
-      console.warn(`No available positions for ${roseColor} roses.`);
+
+      // Return position for data recording
+      return { x, y };
     }
-    // Clear highlight after 2 seconds
-    setTimeout(() => {
-      setNewestRoseIndex(null);
-    }, 2000);
+
+    console.warn(`No available positions for ${roseColor} roses.`);
+    return null;
+    // // Clear highlight after 2 seconds
+    // setTimeout(() => {
+    //   setNewestRoseIndex(null);
+    // }, 2000);
 
   };
 
