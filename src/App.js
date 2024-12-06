@@ -25,6 +25,9 @@ const App = () => {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
   const [data, setData] = useState([]); // Stores game data and user choices
+  const [gameStartTime, setGameStartTime] = useState(null);
+  const [stage1StartTime, setStage1StartTime] = useState(null);
+  const [stage2StartTime, setStage2StartTime] = useState(null);
   const [keyPressEnabled, setKeyPressEnabled] = useState(false);
 
   // CONSTANT GAME VALUES
@@ -59,9 +62,10 @@ const App = () => {
     }
   ];
   // Choose a random rose color condition from above
-  const roseColorProbabilities = roseColorConditions[Math.floor(Math.random() * roseColorConditions.length)];
+  const randomIndex = Math.floor(Math.random() * roseColorConditions.length);
+  const roseColorProbabilities = roseColorConditions[randomIndex];
   console.log("rose probabilities: ", roseColorProbabilities);
-
+  const chosenRoseProbabilityCondition = randomIndex + 1;
 
 
   // GAME METHODS
@@ -85,12 +89,15 @@ const App = () => {
     if (subjectId.trim() === '') {
       setError('Please enter a subject ID');
     } else {
+      const startTime = Date.now();
+      setGameStartTime(startTime);
       setError('');
       setStage('instructions');
-      setData([...data, {
-        timestamp: new Date().toISOString(),
+      setData([{
+        gameStartTime: startTime,
+        // timestamp: new Date().toISOString(),
         stage: 'intake',
-        subjectId: subjectId
+        subjectId: subjectId,
       }]);
     }
   };
@@ -162,8 +169,30 @@ const App = () => {
 
   const chooseStore = (store, keypress) => {
     // Set store and gardener pair
+    const choiceTime = Date.now();
     setSelectedStore(store);
-    chooseGardenerPair(store, keypress);
+
+    // Choose gardener pair and get probabilities
+    const randomValue = Math.random();
+    let gardenerPair;
+    if (store === 'Store 1') {
+      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair1 : gardenerPairs.pair2;
+    } else {
+      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair2 : gardenerPairs.pair1;
+    }
+
+    setCurrentGardenerPair(gardenerPair);
+
+    // Save data
+    setData(prevData => [...prevData, {
+      // timestamp: new Date().toISOString(),
+      stage: isPractice ? 'stage1Practice' : 'stage1',
+      timeFromStart: choiceTime - gameStartTime,
+      timeFromStage1Start: choiceTime - stage1StartTime,
+      userChoice: keypress,
+      selectedStore: store,
+      gardenerPair: gardenerPair
+    }]);
 
     // Intertrial interval delay before moving onto stage 2
     setTimeout(() => {
@@ -171,28 +200,6 @@ const App = () => {
       setSelectedStore(''); // reset selection box display
     }, intertrialinterval1); // delay before stage 2
 
-  };
-
-  const chooseGardenerPair = (store, keypress) => {
-    let randomValue = Math.random();
-    let gardenerPair;
-
-    // Choose gardener pair based on user choice and 80/20 probabilities 
-    if (store === 'Store 1') {
-      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair1 : gardenerPairs.pair2;
-    } else {
-      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair2 : gardenerPairs.pair1;
-    }
-    setCurrentGardenerPair(gardenerPair);
-
-    // Save data after setting the store and gardener pair
-    setData(prevData => [...prevData, {
-      timestamp: new Date().toISOString(),
-      stage: isPractice ? 'stage1Practice' : 'stage1', // Adjust stage based on isPractice
-      userChoice: keypress,
-      selectedStore: store,
-      gardenerPair: gardenerPair,
-    }])
   };
 
   const showStage2 = () => (
@@ -246,34 +253,74 @@ const App = () => {
     setKeyPressEnabled(stage === 'stage1' || stage === 'stage2');
   }, [stage]);
 
+  // Record timing for game stage transitions
+  useEffect(() => {
+    if (stage === 'stage1') {
+      const stage1Time = Date.now();
+      setStage1StartTime(stage1Time);
+      setData(prevData => [...prevData, {
+        timestamp: new Date().toISOString(),
+        stage: 'stage1Start',
+        timeFromtStart: stage1Time - gameStartTime
+      }]);
+    } else if (stage === 'stage2') {
+      const stage2Time = Date.now();
+      setStage2StartTime(stage2Time);
+      setData(prevData => [...prevData, {
+        timestamp: new Date().toISOString(),
+        stage: 'stage2Start',
+        timeFromStart: stage2Time - gameStartTime
+      }]);
+    }
+  }, [stage]);
+
+
   const chooseGardener = (gardener, keypress) => {
     // Save gardener choice
+    const choiceTime = Date.now();
     setSelectedGardener(gardener);
 
     // Determine the selected gardener's ID from the current pair for rose probability lookup
-    //// Details: checks whether the user selection was Gardener 1 (the left side gardener). If so, choose the first element in gardener pair, if not, choose second gardener in gardener pair
     const gardenerId = currentGardenerPair[gardener === 'Gardener 1' ? 0 : 1].split('/').pop().split('.')[0];
+    // Checks whether the user selection was Gardener 1 (the left side gardener).
+    // If so, choose the first element in gardener pair, if not, choose second gardener in gardener pair
 
-    // Determine rose color based on the gardener's probability
-    const roseColor = Math.random() < roseColorProbabilities[gardenerId].red ? 'red' : 'yellow';
+    // Get probabilities for chosen gardener
+    const gardenerProbabilities = roseColorProbabilities[gardenerId];
+
+    // Determine rose color
+    const roseColor = Math.random() < gardenerProbabilities.red ? 'red' : 'yellow';
+
     // Add data
     setData(prevData => [...prevData, {
-      timestamp: new Date().toISOString(),
-      stage: isPractice ? 'stage2Practice' : 'stage2', // Adjust stage based on isPractice
+      // timestamp: new Date().toISOString(),
+      stage: isPractice ? 'stage2Practice' : 'stage2',
+      timeFromStart: choiceTime - gameStartTime,
+      timeFromStage2Start: choiceTime - stage2StartTime,
       userChoice: keypress,
       gardenerPair: currentGardenerPair,
-      selectedGardener: gardenerId
-    }])
+      selectedGardener: gardenerId,
+      gardenerProbabilities: gardenerProbabilities,
+      // roseColor: roseColor
+    }]);
 
     setTimeout(() => {
       // reset selection box display
       setSelectedGardener('');
 
-      // Add rose to garden
-      addRoseToGarden(roseColor);
-      setRoseCount(roseCount + 1);
+      // Add rose to garden and record its position
+      const rosePosition = addRoseToGarden(roseColor);
+      if (rosePosition) {
+        setData(prevData => [...prevData, {
+          // timestamp: new Date().toISOString(),
+          stage: 'reward',
+          roseColor: roseColor,
+          rosePosition: { x: rosePosition.x, y: rosePosition.y }
+        }]);
+      }
 
-      // Increment round count
+      // Increment rose and round count
+      setRoseCount(roseCount + 1);
       const newRoundCount = roundCount + 1;
       setRoundCount(newRoundCount);
 
@@ -290,7 +337,7 @@ const App = () => {
 
   };
 
-  const addRoseToGarden = function (roseColor) {
+  const addRoseToGarden = (roseColor) => {
     if (!addRoseToGarden.currentRegion) {
       // Static variable to track current region and remaining positions
       addRoseToGarden.currentRegion = {
