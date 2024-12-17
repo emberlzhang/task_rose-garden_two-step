@@ -329,7 +329,7 @@ const App = () => {
           timeFromStart: currentTime - gameStartTime,
           stage: 'reward',
           roseColor: roseColor,
-          rosePosition: { x: rosePosition.x, y: rosePosition.y }
+          rosePosition: { x: rosePosition.x / 32, y: rosePosition.y / 32 }
         }]);
       }
 
