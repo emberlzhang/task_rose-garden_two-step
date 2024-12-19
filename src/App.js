@@ -44,7 +44,7 @@ const ROSE_COLOR_CONDITIONS = [
 ];
 
 // Choose a random rose color condition from above
-const randomIndex = Math.floor(Math.random() * roseColorConditions.length);
+const randomIndex = Math.floor(Math.random() * ROSE_COLOR_CONDITIONS.length);
 const ROSE_COLOR_PROBABILITIES = ROSE_COLOR_CONDITIONS[randomIndex];
 console.log("rose probabilities: ", ROSE_COLOR_PROBABILITIES);
 const chosenRoseProbabilityCondition = randomIndex + 1;
