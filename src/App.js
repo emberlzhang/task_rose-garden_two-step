@@ -11,7 +11,7 @@ const App = () => {
   const [garden, setGarden] = useState([]);
   const [error, setError] = useState('');
   const [roseCount, setRoseCount] = useState(0);
-  const [roundCount, setRoundCount] = useState(0);
+  const [roundCount, setRoundCount] = useState(1);
   const [isPractice, setIsPractice] = useState(true);
   const [selectedStore, setSelectedStore] = useState('');
   const [currentGardenerPair, setCurrentGardenerPair] = useState([]);
@@ -32,6 +32,8 @@ const App = () => {
   const [stage1StartTime, setStage1StartTime] = useState(null);
   const [stage2StartTime, setStage2StartTime] = useState(null);
   const [keyPressEnabled, setKeyPressEnabled] = useState(false);
+  const [stage1ChoiceMade, setStage1ChoiceMade] = useState(false);
+  const [stage2ChoiceMade, setStage2ChoiceMade] = useState(false);
 
   // CONSTANT GAME VALUES
   const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
@@ -40,6 +42,7 @@ const App = () => {
   const maxRounds = 30; // need to set to 150 for real game
   const intertrialinterval1 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 1 choice, before stage 2 display
   const intertrialinterval2 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 2 choice, before adding rose
+  const rewardinterval = 1000; // delay after adding rose, before stage 1 display
   const gardenerPairs = {
     pair1: ['/gardener_1A.png', '/gardener_1B.png'],
     pair2: ['/gardener_2A.png', '/gardener_2B.png']
@@ -145,7 +148,7 @@ const App = () => {
       <button onClick={() => {
         setStage('stage1');
         setIsPractice(false);
-        setRoundCount(0);
+        setRoundCount(1);
         setGarden([]);
         setRoseCount(0);
         // Change flower bed configuration and regions and reset for real game
@@ -158,6 +161,67 @@ const App = () => {
       }}>Start Game</button>
     </div>
   );
+
+  const handleKeyPress = (event) => {
+    if (!keyPressEnabled) return;
+
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      if (stage === 'stage1' && !stage1ChoiceMade) {
+        const store = event.key === 'ArrowLeft' ? 'Store 1' : 'Store 2';
+        setStage1ChoiceMade(true);
+        handleStage1Choice(store, event.key);
+      } else if (stage === 'stage2' && !stage2ChoiceMade) {
+        const gardener = event.key === 'ArrowLeft' ? 'Gardener 1' : 'Gardener 2';
+        setStage2ChoiceMade(true);
+        handleStage2Choice(gardener, event.key);
+      }
+    }
+  };
+
+  // Adds event listener for key presses whenever:
+  // a. key presses are enabled in the game
+  // b. the game stage changes
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [stage, keyPressEnabled]);
+
+  // Enables key presses to occur when stage is Stage1 or Stage2
+  useEffect(() => {
+    // Enable key presses during Stage 1 and Stage 2
+    setKeyPressEnabled(stage === 'stage1' || stage === 'stage2');
+
+    // // Reset flag when entering Stage2
+    // if (stage === 'stage2') {
+    //   setRoseAddedThisStage(false);
+    // }
+  }, [stage]);
+
+  // Record timing for game stage transitions
+  useEffect(() => {
+    if (stage === 'stage1') {
+      setStage2ChoiceMade(false); // Reset stage 2 choice when returning to stage 1
+      const stage1Time = Date.now();
+      setStage1StartTime(stage1Time);
+      setData(prevData => [...prevData, {
+        stage: 'stage1Start',
+        trial: roundCount,
+        timeFromStart: stage1Time - gameStartTime
+      }]);
+    } else if (stage === 'stage2') {
+      setStage1ChoiceMade(false); // Reset stage 1 choice when moving to stage 2
+      const stage2Time = Date.now();
+      setStage2StartTime(stage2Time);
+      setData(prevData => [...prevData, {
+        stage: 'stage2Start',
+        trial: roundCount,
+        timeFromStart: stage2Time - gameStartTime
+      }]);
+    }
+  }, [stage]);
+
 
   const showStage1 = () => {
     return (<div className="stage">
@@ -175,11 +239,11 @@ const App = () => {
           className={`store-image ${selectedStore === 'Store 2' ? 'selected' : ''}`}
         />
       </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? practiceRounds : maxRounds}</p>
+      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? practiceRounds : maxRounds}</p>
     </div>)
   };
 
-  const chooseStore = (store, keypress) => {
+  const handleStage1Choice = (store, keypress) => {
     // Set store and gardener pair
     const choiceTime = Date.now();
     setSelectedStore(store);
@@ -197,11 +261,11 @@ const App = () => {
 
     // Save data
     setData(prevData => [...prevData, {
-      // timestamp: new Date().toISOString(),
       stage: isPractice ? 'stage1Practice' : 'stage1',
       timeFromStart: choiceTime - gameStartTime,
       timeFromStage1Start: choiceTime - stage1StartTime,
       userChoice: keypress,
+      trial: roundCount,
       selectedStore: store,
       gardenerPair: gardenerPair
     }]);
@@ -232,65 +296,19 @@ const App = () => {
           />
         </div>
       </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount + 1} / {isPractice ? practiceRounds : maxRounds}</p>
+      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? practiceRounds : maxRounds}</p>
     </div>
   );
 
-  const handleKeyPress = (event) => {
-    if (!keyPressEnabled) return;
 
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-      if (stage === 'stage1') {
-        const store = event.key === 'ArrowLeft' ? 'Store 1' : 'Store 2';
-        chooseStore(store, event.key);
-      } else if (stage === 'stage2') {
-        const gardener = event.key === 'ArrowLeft' ? 'Gardener 1' : 'Gardener 2';
-        chooseGardener(gardener, event.key);
-      }
-    }
-  };
+  const handleStage2Choice = (gardener, keypress) => {
+    // if (roseAddedThisStage) return; // Prevent multiple roses from being added
 
-  // Adds event listener for key presses whenever:
-  // a. key presses are enabled in the game
-  // b. the game stage changes
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyPress);
-    return () => {
-      window.removeEventListener('keydown', handleKeyPress);
-    };
-  }, [stage, keyPressEnabled]);
-
-  // Enables key presses to occur when stage is Stage1 or Stage2
-  useEffect(() => {
-    setKeyPressEnabled(stage === 'stage1' || stage === 'stage2');
-  }, [stage]);
-
-  // Record timing for game stage transitions
-  useEffect(() => {
-    if (stage === 'stage1') {
-      const stage1Time = Date.now();
-      setStage1StartTime(stage1Time);
-      setData(prevData => [...prevData, {
-        // timestamp: new Date().toISOString(),
-        stage: 'stage1Start',
-        timeFromStart: stage1Time - gameStartTime
-      }]);
-    } else if (stage === 'stage2') {
-      const stage2Time = Date.now();
-      setStage2StartTime(stage2Time);
-      setData(prevData => [...prevData, {
-        // timestamp: new Date().toISOString(),
-        stage: 'stage2Start',
-        timeFromStart: stage2Time - gameStartTime
-      }]);
-    }
-  }, [stage]);
-
-
-  const chooseGardener = (gardener, keypress) => {
     // Save gardener choice
     const choiceTime = Date.now();
     setSelectedGardener(gardener);
+    setStage('reward'); // set stage here so that keypresses are no longer enabled
+    // setRoseAddedThisStage(true); // Mark that a rose has been added
 
     // Determine the selected gardener's ID from the current pair for rose probability lookup
     const gardenerId = currentGardenerPair[gardener === 'Gardener 1' ? 0 : 1].split('/').pop().split('.')[0];
@@ -303,53 +321,66 @@ const App = () => {
     // Determine rose color
     const roseColor = Math.random() < gardenerProbabilities.red ? 'red' : 'yellow';
 
-    // Add data
+    // Record data from Stage 2
     setData(prevData => [...prevData, {
-      // timestamp: new Date().toISOString(),
       stage: isPractice ? 'stage2Practice' : 'stage2',
       timeFromStart: choiceTime - gameStartTime,
       timeFromStage2Start: choiceTime - stage2StartTime,
       userChoice: keypress,
+      trial: roundCount,
       gardenerPair: currentGardenerPair,
       selectedGardener: gardenerId,
       gardenerProbabilities: gardenerProbabilities,
-      // roseColor: roseColor
     }]);
 
-    setTimeout(() => {
-      // reset selection box display
-      setSelectedGardener('');
-
-      // Add rose to garden and record its position
-      const rosePosition = addRoseToGarden(roseColor);
-      if (rosePosition) {
-        const currentTime = Date.now();
-        setData(prevData => [...prevData, {
-          // timestamp: new Date().toISOString(),
-          timeFromStart: currentTime - gameStartTime,
-          stage: 'reward',
-          roseColor: roseColor,
-          rosePosition: { x: rosePosition.x / 32, y: rosePosition.y / 32 }
-        }]);
-      }
-
-      // Increment rose and round count
-      setRoseCount(roseCount + 1);
-      const newRoundCount = roundCount + 1;
-      setRoundCount(newRoundCount);
-
-      // Check if practice or game should end
-      if (isPractice && newRoundCount >= practiceRounds) {
-        setStage('transition'); // go to transition screen before real game
-      } else if (!isPractice && newRoundCount >= maxRounds) {
-        setStage('gameOver'); // end the game
-      } else {
-        // proceed to next round
-        setStage('stage1');
-      }
-    }, intertrialinterval2); // Delay before adding rose and proceed to next round
+    setTimeout(() => { // Start reward phase after a delay
+      setSelectedGardener(''); // Clear selection box from Phase 2 display
+      showReward(roseColor); // Display rose
+    }, intertrialinterval2); // Delay before adding rose to garden (reward display)
 
   };
+
+  const showReward = (roseColor) => {
+    // Add rose to garden and record its position
+    const rosePosition = addRoseToGarden(roseColor);
+    if (rosePosition) {
+      const currentTime = Date.now();
+      setData(prevData => [...prevData, {
+        // timestamp: new Date().toISOString(),
+        timeFromStart: currentTime - gameStartTime,
+        stage: 'reward',
+        roseColor: roseColor,
+        trial: roundCount,
+        rosePosition: { x: rosePosition.x / 32, y: rosePosition.y / 32 }
+      }]);
+    }
+    // Pause before going to the next trial or finishing experiment
+    setTimeout(() => {
+      goToNextTrial();
+    }, rewardinterval);
+
+  }
+
+  const goToNextTrial = () => {
+    // Reset choice locks
+    setStage1ChoiceMade(false);
+    setStage2ChoiceMade(false);
+
+    // Increment rose and round count
+    setRoseCount(roseCount + 1);
+    const newRoundCount = roundCount + 1;
+    setRoundCount(newRoundCount);
+
+    // Check if practice or game should end
+    if (isPractice && newRoundCount > practiceRounds) {
+      setStage('transition'); // go to transition screen
+    } else if (!isPractice && newRoundCount > maxRounds) {
+      setStage('gameOver');
+    } else {
+      setStage('stage1'); // proceed to next trial
+    }
+  }
+
 
   const addRoseToGarden = (roseColor) => {
     if (!gardenManager) return null;
@@ -381,7 +412,7 @@ const App = () => {
     // Clear highlight after 2 seconds
     setTimeout(() => {
       setNewestRoseIndex(null);
-    }, 2000);
+    }, rewardinterval);
 
     return position;
   };
@@ -394,7 +425,7 @@ const App = () => {
         const ctx = canvasRef.current.getContext('2d');
         ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
 
-        // Draw all roses first
+        // Draw all existing roses in garden
         for (const rose of garden) {
           await drawRose(ctx, rose);
         }
@@ -418,6 +449,7 @@ const App = () => {
     drawGarden();
   }, [garden, newestRoseIndex]);
 
+  // Helper function for drawing rose
   const drawRose = (ctx, rose) => {
     // return new Promise((resolve) => {
     const img = new Image();
@@ -438,43 +470,13 @@ const App = () => {
   };
 
 
-
-  const HighlightOverlay = ({ rose, containerRef }) => {
-    const [position, setPosition] = useState({ left: 0, top: 0 });
-
-    useEffect(() => {
-      if (containerRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        setPosition({
-          left: rose.x,
-          top: rose.y
-        });
-      }
-    }, [rose, containerRef]);
-
-    return (
-      <div
-        className="newest-rose-indicator"
-        style={{
-          position: 'absolute',
-          left: `${position.left}px`,
-          top: `${position.top}px`,
-          width: '32px',
-          height: '32px',
-          border: '2px solid yellow',
-          borderRadius: '50%',
-          animation: 'fade-out 2s forwards',
-          boxSizing: 'border-box',
-          pointerEvents: 'none',
-        }}
-      />
-    );
-  };
-
   const showGarden = () => {
     return (
       <div className="garden">
-        <h3>Your rose garden is growing...</h3>
+
+        {/* Hide H3 text at end of game */}
+        {stage !== 'gameOver' && <h3>Your rose garden is growing...</h3>}
+
         <div ref={containerRef}>
           <canvas
             ref={canvasRef}
@@ -492,10 +494,9 @@ const App = () => {
   const showGameOver = () => {
     return (
       <div className="game-over">
-        <h2>Game Over</h2>
+        <h2>Game Complete</h2>
         <p>Congratulations! You've completed the game.</p>
         <p>Your final garden has {roseCount} roses.</p>
-        {/* <button onClick={() => saveChoicesToCSV(data)}>Download Game Data</button> */}
       </div>
     );
   };
@@ -573,7 +574,7 @@ const App = () => {
       {stage === 'instructions' && showInstructions()}
       {stage === 'transition' && showTransitionScreen()}
       {stage === 'stage1' && showStage1()}
-      {stage === 'stage2' && showStage2()}
+      {(stage === 'stage2' || stage === 'reward') && showStage2()}
       {stage === 'gameOver' && showGameOver()}
       {stage !== 'intake' && stage !== 'instructions' && stage !== 'transition' && showGarden()}
     </div>
