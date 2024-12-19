@@ -1,57 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import {
+  GARDEN_WIDTH,
+  GARDEN_HEIGHT,
+  PRACTICE_ROUNDS,
+  MAX_ROUNDS,
+  REWARD_INTERVAL,
+  INTERTRIAL_INTERVAL_1,
+  INTERTRIAL_INTERVAL_2,
+  GARDENER_PAIRS,
+  ROSE_COLOR_PROBABILITIES,
+  CHOSEN_CONDITION
+} from './gameConstants';
 import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
 import { GardenManager } from './gardenManager.js';
 
-// CONSTANT GAME VALUES
-const GARDEN_TILE_SIZE = 32;
-const GARDEN_COLUMNS = 29;
-const GARDEN_ROWS = 21;
-const GARDEN_WIDTH = 32 * 29; // the last number should equal number of columns in flowerBeds array
-const GARDEN_HEIGHT = 32 * 21; // the last number should be number of rows in flowerBeds array
-
-const PRACTICE_ROUNDS = 10;
-const MAX_ROUNDS = 30; // need to set to 150 for real game
-
-const REWARD_INTERVAL = 1000;
-const INTERTRIAL_INTERVAL_1 = [400, 600, 800][Math.floor(Math.random() * 3)];
-const INTERTRIAL_INTERVAL_2 = [400, 600, 800][Math.floor(Math.random() * 3)];
-
-const GARDENER_PAIRS = {
-  pair1: ['/gardener_1A.png', '/gardener_1B.png'],
-  pair2: ['/gardener_2A.png', '/gardener_2B.png']
-};
-
-const ROSE_COLOR_CONDITIONS = [
-  { // Condition 1
-    'gardener_1A': { red: 0.8, yellow: 0.2 },
-    'gardener_1B': { red: 0.2, yellow: 0.8 },
-    'gardener_2A': { red: 0.6, yellow: 0.4 },
-    'gardener_2B': { red: 0.4, yellow: 0.6 }
-  },
-  { // Condition 2
-    'gardener_1A': { red: 0.6, yellow: 0.4 },
-    'gardener_1B': { red: 0.2, yellow: 0.8 },
-    'gardener_2A': { red: 0.8, yellow: 0.2 },
-    'gardener_2B': { red: 0.4, yellow: 0.6 }
-  },
-  { // Condition 3
-    'gardener_1A': { red: 0.6, yellow: 0.4 },
-    'gardener_1B': { red: 0.4, yellow: 0.6 },
-    'gardener_2A': { red: 0.8, yellow: 0.2 },
-    'gardener_2B': { red: 0.2, yellow: 0.8 }
-  }
-];
-
-// Choose a random rose color condition from above
-const randomIndex = Math.floor(Math.random() * ROSE_COLOR_CONDITIONS.length);
-const ROSE_COLOR_PROBABILITIES = ROSE_COLOR_CONDITIONS[randomIndex];
-console.log("rose probabilities: ", ROSE_COLOR_PROBABILITIES);
-const chosenRoseProbabilityCondition = randomIndex + 1;
-
 
 const App = () => {
-  // CONSTANT VARIABLES
   const [stage, setStage] = useState('intake');
   const [subjectId, setSubjectId] = useState('');
   const [gardenManager, setGardenManager] = useState(null);
@@ -124,7 +89,7 @@ const App = () => {
         stage: 'intake',
         subjectId: subjectId,
         roseProbabilities: ROSE_COLOR_PROBABILITIES,
-        roseProbabilitiesCondition: chosenRoseProbabilityCondition,
+        roseProbabilitiesCondition: CHOSEN_CONDITION,
       }]);
     }
   };
@@ -248,10 +213,8 @@ const App = () => {
   };
 
   const handleStage1Choice = (store, keypress) => {
-    console.log("stage 1 choice made A: ", stage1ChoiceRef.current);
     if (stage1ChoiceRef.current) { return; }
     stage1ChoiceRef.current = true;
-    console.log("stage 1 choice made B: ", stage1ChoiceRef.current);
 
     // Set store and gardener pair
     const choiceTime = Date.now();
@@ -276,7 +239,8 @@ const App = () => {
       userChoice: keypress,
       trial: roundCount,
       selectedStore: store,
-      gardenerPair: gardenerPair
+      gardenerPair: gardenerPair,
+      intertrialInterval1: INTERTRIAL_INTERVAL_1
     }]);
 
     // Intertrial interval delay before moving onto stage 2
@@ -311,10 +275,9 @@ const App = () => {
 
 
   const handleStage2Choice = (gardener, keypress) => {
-    console.log("stage 2 choice made A: ", stage2ChoiceRef.current);
     if (stage2ChoiceRef.current) return; // Prevent multiple roses from being added
     stage2ChoiceRef.current = true;
-    console.log("stage 2 choice made B: ", stage2ChoiceRef.current);
+
     // Save gardener choice
     const choiceTime = Date.now();
     setSelectedGardener(gardener);
@@ -342,6 +305,7 @@ const App = () => {
       gardenerPair: currentGardenerPair,
       selectedGardener: gardenerId,
       gardenerProbabilities: gardenerProbabilities,
+      intertrialInterval2: INTERTRIAL_INTERVAL_2
     }]);
 
     setTimeout(() => { // Start reward phase after a delay
@@ -362,7 +326,8 @@ const App = () => {
         stage: 'reward',
         roseColor: roseColor,
         trial: roundCount,
-        rosePosition: { x: rosePosition.x / 32, y: rosePosition.y / 32 }
+        rosePosition: { x: rosePosition.x / 32, y: rosePosition.y / 32 },
+        rewardInterval: REWARD_INTERVAL,
       }]);
     }
     // Pause before going to the next trial or finishing experiment
