@@ -3,6 +3,53 @@ import './App.css';
 import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
 import { GardenManager } from './gardenManager.js';
 
+// CONSTANT GAME VALUES
+const GARDEN_TILE_SIZE = 32;
+const GARDEN_COLUMNS = 29;
+const GARDEN_ROWS = 21;
+const GARDEN_WIDTH = 32 * 29; // the last number should equal number of columns in flowerBeds array
+const GARDEN_HEIGHT = 32 * 21; // the last number should be number of rows in flowerBeds array
+
+const PRACTICE_ROUNDS = 10;
+const MAX_ROUNDS = 30; // need to set to 150 for real game
+
+const REWARD_INTERVAL = 1000;
+const INTERTRIAL_INTERVAL_1 = [400, 600, 800][Math.floor(Math.random() * 3)];
+const INTERTRIAL_INTERVAL_2 = [400, 600, 800][Math.floor(Math.random() * 3)];
+
+const GARDENER_PAIRS = {
+  pair1: ['/gardener_1A.png', '/gardener_1B.png'],
+  pair2: ['/gardener_2A.png', '/gardener_2B.png']
+};
+
+const ROSE_COLOR_CONDITIONS = [
+  { // Condition 1
+    'gardener_1A': { red: 0.8, yellow: 0.2 },
+    'gardener_1B': { red: 0.2, yellow: 0.8 },
+    'gardener_2A': { red: 0.6, yellow: 0.4 },
+    'gardener_2B': { red: 0.4, yellow: 0.6 }
+  },
+  { // Condition 2
+    'gardener_1A': { red: 0.6, yellow: 0.4 },
+    'gardener_1B': { red: 0.2, yellow: 0.8 },
+    'gardener_2A': { red: 0.8, yellow: 0.2 },
+    'gardener_2B': { red: 0.4, yellow: 0.6 }
+  },
+  { // Condition 3
+    'gardener_1A': { red: 0.6, yellow: 0.4 },
+    'gardener_1B': { red: 0.4, yellow: 0.6 },
+    'gardener_2A': { red: 0.8, yellow: 0.2 },
+    'gardener_2B': { red: 0.2, yellow: 0.8 }
+  }
+];
+
+// Choose a random rose color condition from above
+const randomIndex = Math.floor(Math.random() * roseColorConditions.length);
+const ROSE_COLOR_PROBABILITIES = ROSE_COLOR_CONDITIONS[randomIndex];
+console.log("rose probabilities: ", ROSE_COLOR_PROBABILITIES);
+const chosenRoseProbabilityCondition = randomIndex + 1;
+
+
 const App = () => {
   // CONSTANT VARIABLES
   const [stage, setStage] = useState('intake');
@@ -35,43 +82,6 @@ const App = () => {
   const stage1ChoiceRef = useRef(false);
   const stage2ChoiceRef = useRef(false);
 
-  // CONSTANT GAME VALUES
-  const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
-  const gardenHeight = 32 * 21; // the last number should be number of rows in flowerBeds array
-  const practiceRounds = 10;
-  const maxRounds = 30; // need to set to 150 for real game
-  const intertrialinterval1 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 1 choice, before stage 2 display
-  const intertrialinterval2 = [400, 600, 800][Math.floor(Math.random() * 3)]; // delay after stage 2 choice, before adding rose
-  const rewardinterval = 1000; // delay after adding rose, before stage 1 display
-  const gardenerPairs = {
-    pair1: ['/gardener_1A.png', '/gardener_1B.png'],
-    pair2: ['/gardener_2A.png', '/gardener_2B.png']
-  };
-  const roseColorConditions = [
-    {
-      'gardener_1A': { red: 0.8, yellow: 0.2 },
-      'gardener_1B': { red: 0.2, yellow: 0.8 },
-      'gardener_2A': { red: 0.6, yellow: 0.4 },
-      'gardener_2B': { red: 0.4, yellow: 0.6 }
-    },
-    {
-      'gardener_1A': { red: 0.6, yellow: 0.4 },
-      'gardener_1B': { red: 0.2, yellow: 0.8 },
-      'gardener_2A': { red: 0.8, yellow: 0.2 },
-      'gardener_2B': { red: 0.4, yellow: 0.6 }
-    },
-    {
-      'gardener_1A': { red: 0.6, yellow: 0.4 },
-      'gardener_1B': { red: 0.4, yellow: 0.6 },
-      'gardener_2A': { red: 0.8, yellow: 0.2 },
-      'gardener_2B': { red: 0.2, yellow: 0.8 }
-    }
-  ];
-  // Choose a random rose color condition from above
-  const randomIndex = Math.floor(Math.random() * roseColorConditions.length);
-  const roseColorProbabilities = roseColorConditions[randomIndex];
-  console.log("rose probabilities: ", roseColorProbabilities);
-  const chosenRoseProbabilityCondition = randomIndex + 1;
 
   // Setup GardenManager before game start
   useEffect(() => {
@@ -113,6 +123,8 @@ const App = () => {
         timestamp: startTimestamp,
         stage: 'intake',
         subjectId: subjectId,
+        roseProbabilities: ROSE_COLOR_PROBABILITIES,
+        roseProbabilitiesCondition: chosenRoseProbabilityCondition,
       }]);
     }
   };
@@ -231,7 +243,7 @@ const App = () => {
           className={`store-image ${selectedStore === 'Store 2' ? 'selected' : ''}`}
         />
       </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? practiceRounds : maxRounds}</p>
+      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
     </div>)
   };
 
@@ -249,9 +261,9 @@ const App = () => {
     const randomValue = Math.random();
     let gardenerPair;
     if (store === 'Store 1') {
-      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair1 : gardenerPairs.pair2;
+      gardenerPair = randomValue < 0.8 ? GARDENER_PAIRS.pair1 : GARDENER_PAIRS.pair2;
     } else {
-      gardenerPair = randomValue < 0.8 ? gardenerPairs.pair2 : gardenerPairs.pair1;
+      gardenerPair = randomValue < 0.8 ? GARDENER_PAIRS.pair2 : GARDENER_PAIRS.pair1;
     }
 
     setCurrentGardenerPair(gardenerPair);
@@ -271,7 +283,7 @@ const App = () => {
     setTimeout(() => {
       setStage('stage2');
       setSelectedStore(''); // reset selection box display
-    }, intertrialinterval1); // delay before stage 2
+    }, INTERTRIAL_INTERVAL_1); // delay before stage 2
 
   };
 
@@ -293,7 +305,7 @@ const App = () => {
           />
         </div>
       </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? practiceRounds : maxRounds}</p>
+      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
     </div>
   );
 
@@ -315,7 +327,7 @@ const App = () => {
     // If so, choose the first element in gardener pair, if not, choose second gardener in gardener pair
 
     // Get probabilities for chosen gardener
-    const gardenerProbabilities = roseColorProbabilities[gardenerId];
+    const gardenerProbabilities = ROSE_COLOR_PROBABILITIES[gardenerId];
 
     // Determine rose color
     const roseColor = Math.random() < gardenerProbabilities.red ? 'red' : 'yellow';
@@ -335,7 +347,7 @@ const App = () => {
     setTimeout(() => { // Start reward phase after a delay
       setSelectedGardener(''); // Clear selection box from Phase 2 display
       showReward(roseColor); // Display rose
-    }, intertrialinterval2); // Delay before adding rose to garden (reward display)
+    }, INTERTRIAL_INTERVAL_2); // Delay before adding rose to garden (reward display)
 
   };
 
@@ -356,7 +368,7 @@ const App = () => {
     // Pause before going to the next trial or finishing experiment
     setTimeout(() => {
       goToNextTrial();
-    }, rewardinterval);
+    }, REWARD_INTERVAL);
 
   }
 
@@ -371,9 +383,9 @@ const App = () => {
     setRoundCount(newRoundCount);
 
     // Check if practice or game should end
-    if (isPractice && newRoundCount > practiceRounds) {
+    if (isPractice && newRoundCount > PRACTICE_ROUNDS) {
       setStage('transition'); // go to transition screen
-    } else if (!isPractice && newRoundCount > maxRounds) {
+    } else if (!isPractice && newRoundCount > MAX_ROUNDS) {
       setStage('gameOver');
     } else {
       setStage('stage1'); // proceed to next trial
@@ -411,7 +423,7 @@ const App = () => {
     // Clear highlight after 2 seconds
     setTimeout(() => {
       setNewestRoseIndex(null);
-    }, rewardinterval);
+    }, REWARD_INTERVAL);
 
     return position;
   };
@@ -422,7 +434,7 @@ const App = () => {
     const drawGarden = async () => {
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
-        ctx.clearRect(0, 0, gardenWidth, gardenHeight); // Clear the canvas before re-drawing
+        ctx.clearRect(0, 0, GARDEN_WIDTH, GARDEN_HEIGHT); // Clear the canvas before re-drawing
 
         // Draw all existing roses in garden
         for (const rose of garden) {
@@ -479,8 +491,8 @@ const App = () => {
         <div ref={containerRef}>
           <canvas
             ref={canvasRef}
-            width={gardenWidth}
-            height={gardenHeight}
+            width={GARDEN_WIDTH}
+            height={GARDEN_HEIGHT}
             className="garden-canvas"
           />
 
