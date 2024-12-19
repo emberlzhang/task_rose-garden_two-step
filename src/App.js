@@ -32,8 +32,8 @@ const App = () => {
   const [stage1StartTime, setStage1StartTime] = useState(null);
   const [stage2StartTime, setStage2StartTime] = useState(null);
   const [keyPressEnabled, setKeyPressEnabled] = useState(false);
-  const [stage1ChoiceMade, setStage1ChoiceMade] = useState(false);
-  const [stage2ChoiceMade, setStage2ChoiceMade] = useState(false);
+  const stage1ChoiceRef = useRef(false);
+  const stage2ChoiceRef = useRef(false);
 
   // CONSTANT GAME VALUES
   const gardenWidth = 32 * 29; // the last number should equal number of columns in flowerBeds array
@@ -166,13 +166,11 @@ const App = () => {
     if (!keyPressEnabled) return;
 
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-      if (stage === 'stage1' && !stage1ChoiceMade) {
+      if (!stage1ChoiceRef.current && stage === 'stage1') {
         const store = event.key === 'ArrowLeft' ? 'Store 1' : 'Store 2';
-        setStage1ChoiceMade(true);
         handleStage1Choice(store, event.key);
-      } else if (stage === 'stage2' && !stage2ChoiceMade) {
+      } else if (!stage2ChoiceRef.current && stage === 'stage2') {
         const gardener = event.key === 'ArrowLeft' ? 'Gardener 1' : 'Gardener 2';
-        setStage2ChoiceMade(true);
         handleStage2Choice(gardener, event.key);
       }
     }
@@ -193,16 +191,11 @@ const App = () => {
     // Enable key presses during Stage 1 and Stage 2
     setKeyPressEnabled(stage === 'stage1' || stage === 'stage2');
 
-    // // Reset flag when entering Stage2
-    // if (stage === 'stage2') {
-    //   setRoseAddedThisStage(false);
-    // }
   }, [stage]);
 
   // Record timing for game stage transitions
   useEffect(() => {
     if (stage === 'stage1') {
-      setStage2ChoiceMade(false); // Reset stage 2 choice when returning to stage 1
       const stage1Time = Date.now();
       setStage1StartTime(stage1Time);
       setData(prevData => [...prevData, {
@@ -211,7 +204,6 @@ const App = () => {
         timeFromStart: stage1Time - gameStartTime
       }]);
     } else if (stage === 'stage2') {
-      setStage1ChoiceMade(false); // Reset stage 1 choice when moving to stage 2
       const stage2Time = Date.now();
       setStage2StartTime(stage2Time);
       setData(prevData => [...prevData, {
@@ -244,6 +236,11 @@ const App = () => {
   };
 
   const handleStage1Choice = (store, keypress) => {
+    console.log("stage 1 choice made A: ", stage1ChoiceRef.current);
+    if (stage1ChoiceRef.current) { return; }
+    stage1ChoiceRef.current = true;
+    console.log("stage 1 choice made B: ", stage1ChoiceRef.current);
+
     // Set store and gardener pair
     const choiceTime = Date.now();
     setSelectedStore(store);
@@ -302,8 +299,10 @@ const App = () => {
 
 
   const handleStage2Choice = (gardener, keypress) => {
-    // if (roseAddedThisStage) return; // Prevent multiple roses from being added
-
+    console.log("stage 2 choice made A: ", stage2ChoiceRef.current);
+    if (stage2ChoiceRef.current) return; // Prevent multiple roses from being added
+    stage2ChoiceRef.current = true;
+    console.log("stage 2 choice made B: ", stage2ChoiceRef.current);
     // Save gardener choice
     const choiceTime = Date.now();
     setSelectedGardener(gardener);
@@ -363,8 +362,8 @@ const App = () => {
 
   const goToNextTrial = () => {
     // Reset choice locks
-    setStage1ChoiceMade(false);
-    setStage2ChoiceMade(false);
+    stage1ChoiceRef.current = false;
+    stage2ChoiceRef.current = false;
 
     // Increment rose and round count
     setRoseCount(roseCount + 1);
