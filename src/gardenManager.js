@@ -1,129 +1,68 @@
 export class GardenManager {
   constructor(flowerBeds, flowerRegions) {
+    this.flowerSequence = { red: [], yellow: [] };
+    this.currentIndex = { red: 0, yellow: 0 };
     this.flowerBeds = flowerBeds;
-    this.regions = this.preprocessRegions(flowerRegions);
-    this.occupiedSpaces = new Set();
-    this.roseCount = { red: 0, yellow: 0 };
-
-    // Pre-calculate valid positions for each region
-    this.validPositionsByRegion = this.initializeValidPositions();
+    this.flowerRegions = flowerRegions;
+    this.setupFlowerSequence();
+    console.log(`Garden Manager initialized: ${this}`);
   }
 
-  // Preprocess regions into a more efficient format
-  preprocessRegions(regions) {
-    const processed = { red: [], yellow: [] };
-
+  setupFlowerSequence() {
+    // Process each color
     for (const color of ['red', 'yellow']) {
-      processed[color] = regions[color].map((region) => {
-        const [xmin, xmax, ymin, ymax] = region;
-        return {
-          bounds: { xmin, xmax, ymin, ymax },
-          availablePositions: new Set(), // Will be populated in initializeValidPositions
-          totalPositions: 0 // Will be set during initialization
-        };
-      });
-    }
+      const colorKey = color === 'red' ? 1 : 2;
+      let allPositions = [];
 
-    return processed;
-  }
+      // Go through each region
+      this.flowerRegions[color].forEach((region, regionIndex) => {
+        const [xmin, xmax, ymin, ymax] = region; // extract x/y coordinate ranges for each region
+        let regionPositions = [];
 
-  // Initialize all valid positions for each region
-  initializeValidPositions() {
-    const positions = { red: [], yellow: [] };
-
-    for (const color of ['red', 'yellow']) {
-      const colorValue = color === 'red' ? 1 : 2;
-
-      this.regions[color].forEach((region, regionIndex) => {
-        const { bounds } = region;
-        const validPositions = new Set();
-
-        for (let y = bounds.ymin - 1; y <= bounds.ymax - 1; y++) {
-          for (let x = bounds.xmin - 1; x <= bounds.xmax - 1; x++) {
-            if (this.flowerBeds[y][x] === colorValue) {
-              const posKey = `${x},${y}`;
-              validPositions.add(posKey);
+        // Collect all valid positions in this region
+        for (let y = ymin - 1; y <= ymax - 1; y++) {
+          for (let x = xmin - 1; x <= xmax - 1; x++) {
+            if (this.flowerBeds[y][x] === colorKey) { // if the flowerbeds number matches the flower color key
+              regionPositions.push({
+                position: `${x},${y}`,
+                x: x,
+                y: y,
+                regionIndex: regionIndex
+              });
             }
           }
         }
-
-        region.availablePositions = validPositions;
-        region.totalPositions = validPositions.size;
-        positions[color][regionIndex] = validPositions;
+        console.log(`Total number of valid positions for region #${regionIndex}: ${regionPositions.length}`);
+        console.log(`Unshuffled positions for region #${regionIndex}: ${regionPositions}`);
+        // Shuffle positions within this region
+        for (let i = regionPositions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [regionPositions[i], regionPositions[j]] = [regionPositions[j], regionPositions[i]];
+        }
+        console.log(`Shuffled positions for region #${regionIndex}: ${regionPositions}`);
+        // Add to all positions
+        allPositions = allPositions.concat(regionPositions);
       });
+
+      this.flowerSequence[color] = allPositions;
+    }
+  }
+
+  getNextRose(color) {
+    if (this.currentIndex[color] >= this.flowerSequence[color].length) {
+      console.log("No more positions or regions available for this color rose");
+      return null; // no more positions available
     }
 
-    return positions;
-  }
+    const nextPosition = this.flowerSequence[color][this.currentIndex[color]];
+    this.currentIndex[color]++;
 
-  // Get a random position from a region
-  getRandomPosition(validPositions) {
-    if (validPositions.size === 0) return null;
-    const positions = Array.from(validPositions);
-    return positions[Math.floor(Math.random() * positions.length)];
-  }
-
-  // Find next available position for a rose
-  findNextPosition(color) {
-    // First, try regions with more available positions
-    const sortedRegions = [...this.regions[color]]
-      .filter(region => region.availablePositions.size > 0)
-      .sort((a, b) => b.availablePositions.size - a.availablePositions.size);
-
-    for (const region of sortedRegions) {
-      const position = this.getRandomPosition(region.availablePositions);
-      if (position) {
-        return {
-          position: position,
-          regionIndex: this.regions[color].indexOf(region)
-        };
-      }
-    }
-
-    return null;
-  }
-
-  // Add a rose to the garden
-  addRose(color) {
-    const result = this.findNextPosition(color);
-    if (!result) return null;
-
-    const { position, regionIndex } = result;
-    const [x, y] = position.split(',').map(Number);
-
-    // Remove position from all regions that might contain it
-    this.regions[color].forEach(region => {
-      region.availablePositions.delete(position);
-    });
-
-    this.occupiedSpaces.add(position);
-    this.roseCount[color]++;
-
-    // Return the pixel coordinates and region info
     return {
-      x: x * 32,
-      y: y * 32,
-      regionIndex,
-      gridPosition: { x, y }
+      x: nextPosition.x * 32,
+      y: nextPosition.y * 32,
+      regionIndex: nextPosition.regionIndex
     };
   }
 
-  // Check if position is available
-  isPositionAvailable(x, y, color) {
-    const posKey = `${x},${y}`;
-    return !this.occupiedSpaces.has(posKey) &&
-      this.flowerBeds[y][x] === (color === 'red' ? 1 : 2);
-  }
 
-  // Get statistics about the garden
-  getStats() {
-    return {
-      totalRoses: this.roseCount.red + this.roseCount.yellow,
-      rosesByColor: { ...this.roseCount },
-      availableSpaces: {
-        red: this.regions.red.reduce((sum, region) => sum + region.availablePositions.size, 0),
-        yellow: this.regions.yellow.reduce((sum, region) => sum + region.availablePositions.size, 0)
-      }
-    };
-  }
 }

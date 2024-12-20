@@ -64,7 +64,7 @@ export const practiceFlowerRegions = {
   ]
 };
 
-// format for each region's bounds: [[xmin, xmax], [ymin, ymax]] <--values are inclusive
+// format for each region's bounds: [xmin, xmax, ymin, ymax] <--values are inclusive
 export const flowerRegions = {
   'red': [
     [13, 17, 1, 1],   //top middle line

@@ -1,16 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import {
-  GARDEN_WIDTH,
-  GARDEN_HEIGHT,
-  PRACTICE_ROUNDS,
-  MAX_ROUNDS,
-  REWARD_INTERVAL,
-  INTERTRIAL_INTERVAL_1,
-  INTERTRIAL_INTERVAL_2,
-  GARDENER_PAIRS,
-  ROSE_COLOR_PROBABILITIES,
-  CHOSEN_CONDITION
+  GARDEN_WIDTH, GARDEN_HEIGHT, PRACTICE_ROUNDS, MAX_ROUNDS,
+  REWARD_INTERVAL, INTERTRIAL_INTERVAL_1, INTERTRIAL_INTERVAL_2,
+  GARDENER_PAIRS, ROSE_COLOR_PROBABILITIES, CHOSEN_CONDITION
 } from './gameConstants';
 import { practiceFlowerBeds, flowerBeds, practiceFlowerRegions, flowerRegions } from './flowerBeds.js';
 import { GardenManager } from './gardenManager.js';
@@ -57,7 +50,6 @@ const App = () => {
     ));
   }, [isPractice]);
 
-  // GAME METHODS
 
   const showIntakeForm = () => (
     <div className="intake-form">
@@ -73,6 +65,7 @@ const App = () => {
       <button onClick={handleSubmit}>Submit</button>
     </div>
   );
+
 
   const handleSubmit = () => {
     if (subjectId.trim() === '') {
@@ -321,7 +314,6 @@ const App = () => {
     if (rosePosition) {
       const currentTime = Date.now();
       setData(prevData => [...prevData, {
-        // timestamp: new Date().toISOString(),
         timeFromStart: currentTime - gameStartTime,
         stage: 'reward',
         roseColor: roseColor,
@@ -357,22 +349,22 @@ const App = () => {
     }
   }
 
-
   const addRoseToGarden = (roseColor) => {
     if (!gardenManager) return null;
 
-    const position = gardenManager.addRose(roseColor);
+    // Set coordinates for new rose
+    const position = gardenManager.getNextRose(roseColor);
     if (!position) {
       console.warn(`No available positions for ${roseColor} roses.`);
       return null;
     }
-
     const newRose = {
       roseColor,
       x: position.x,
       y: position.y
     };
 
+    // Redraw garden with new rose
     setGarden(prevGarden => {
       const newGarden = [...prevGarden, newRose];
       setNewestRoseIndex(newGarden.length - 1);
@@ -401,14 +393,14 @@ const App = () => {
         const ctx = canvasRef.current.getContext('2d');
         ctx.clearRect(0, 0, GARDEN_WIDTH, GARDEN_HEIGHT); // Clear the canvas before re-drawing
 
-        // Draw all existing roses in garden
+        // Draw all roses in garden
         for (const rose of garden) {
           await drawRose(ctx, rose);
         }
 
         console.log("newestRoseIndex ", newestRoseIndex)
 
-        // Draw highlight circle around new rose after roses are loaded
+        // Highlight new rose
         if (newestRoseIndex !== null) {
           console.log('Adding new rose:', garden[newestRoseIndex]);
           const newRose = garden[newestRoseIndex];
@@ -471,8 +463,8 @@ const App = () => {
     return (
       <div className="game-over">
         <h2>Game Complete</h2>
-        <p>Congratulations! You've completed the game.</p>
-        <p>Your final garden has {roseCount} roses.</p>
+        <p>Congratulations! You've completed the Rose Garden Game.</p>
+        <p>You have grown a garden with {roseCount} roses.</p>
       </div>
     );
   };
