@@ -4,7 +4,7 @@ A React.JS game developed for the Center for Computational Psychiatry at Mount S
 
 The game is a variation of the two-stage behavioral task paradigm without explicit external rewards, developed for both local and online deployment.
 
-[View Code](https://github.com/emberlzhang/task_rose-garden_two-step)
+[Play Game](https://rose-garden-two-step.vercel.app/)
 
 Author: Ember Zhang
 Date: August 2024
