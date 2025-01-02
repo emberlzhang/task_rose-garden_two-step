@@ -23,6 +23,8 @@ const App = () => {
   const [selectedGardener, setSelectedGardener] = useState([]);
   const [newestRoseIndex, setNewestRoseIndex] = useState(null);
 
+  // Variables used by GardenManager
+  // eslint-disable-next-line no-unused-vars
   const [currentBeds, setCurrentBeds] = useState(practiceFlowerBeds);
   const [currentFlowerRegions, setCurrentFlowerRegions] = useState(practiceFlowerRegions);
   const [redRegionIndex, setRedRegionIndex] = useState(0);
@@ -154,13 +156,12 @@ const App = () => {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [stage, keyPressEnabled]);
+  }, [stage, keyPressEnabled, handleKeyPress]);
 
-  // Enables key presses to occur when stage is Stage1 or Stage2
+  // Enables key presses during Stage1 or Stage2
   useEffect(() => {
     // Enable key presses during Stage 1 and Stage 2
     setKeyPressEnabled(stage === 'stage1' || stage === 'stage2');
-
   }, [stage]);
 
   // Record timing for game stage transitions
@@ -182,7 +183,7 @@ const App = () => {
         timeFromStart: stage2Time - gameStartTime
       }]);
     }
-  }, [stage]);
+  }, [stage, roundCount]);
 
 
   const showStage1 = () => {
