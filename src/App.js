@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
+import { Container, Form, Button, Alert, Card } from 'react-bootstrap';
 import {
   GARDEN_WIDTH, GARDEN_HEIGHT, PRACTICE_ROUNDS, MAX_ROUNDS,
   REWARD_INTERVAL, INTERTRIAL_INTERVAL_1, INTERTRIAL_INTERVAL_2,
@@ -54,18 +55,30 @@ const App = () => {
 
 
   const showIntakeForm = () => (
-    <div className="intake-form">
-      <h2>Welcome to the Rose Garden Game</h2>
-      <p>Please enter your subject ID to begin:</p>
-      <input
-        type="text"
-        value={subjectId}
-        onChange={(e) => setSubjectId(e.target.value)}
-        placeholder="Enter Subject ID"
-      />
-      {error && <p className="error-message">{error}</p>}
-      <button onClick={handleSubmit}>Submit</button>
-    </div>
+    <Container className="mt-5">
+      <Card className="mx-auto" style={{ maxWidth: '600px' }}>
+        <Card.Body>
+          <Card.Title className="text-center mb-4">Welcome to the Rose Garden Game</Card.Title>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Please enter your subject ID to begin:</Form.Label>
+              <Form.Control
+                type="text"
+                value={subjectId}
+                onChange={(e) => setSubjectId(e.target.value)}
+                placeholder="Enter Subject ID"
+              />
+            </Form.Group>
+            {error && <Alert variant="danger">{error}</Alert>}
+            <div className="text-center">
+              <Button variant="primary" onClick={handleSubmit}>
+                Submit
+              </Button>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 
 
@@ -90,48 +103,62 @@ const App = () => {
   };
 
   const showInstructions = () => (
-    <div className="instructions">
-      <h2>Instructions</h2>
-      <p>
-        Welcome to the Rose Garden Game! Your goal is to grow a beautiful rose garden by making strategic decisions at each stage.
-      </p>
-      <p>Here's how to play:</p>
-      <ul>
-        <li>In Stage 1, choose between two gardening stores.</li>
-        <li>In Stage 2, choose between two gardeners to talk to.</li>
-        <li>You will receive a rose, which will be added to your garden plot.</li>
-        <li>Roses can be either yellow or red.</li>
-        <li>Different gardeners have different color roses!</li>
-        <li>You'll start with 10 practice rounds to get familiar with the game.</li>
-        <li>After the practice, the real game will have 150 rounds.</li>
-      </ul>
-      <br></br>
-      <br></br>
-      <button onClick={() => setStage('stage1')}>Start Practice</button>
-    </div>
+    <Container className="mt-5">
+      <Card className="mx-auto" style={{ maxWidth: '800px' }}>
+        <Card.Body>
+          <Card.Title className="text-center mb-4">Instructions</Card.Title>
+          <Card.Text>
+            Welcome to the Rose Garden Game! Your goal is to grow a beautiful rose garden by making strategic decisions at each stage.
+          </Card.Text>
+          <Card.Text>Here's how to play:</Card.Text>
+          <ul className="list-group list-group-flush mb-4">
+            <li className="list-group-item">In Stage 1, choose between two stores to visit.</li>
+            <li className="list-group-item">In Stage 2, choose between two gardeners to talk to.</li>
+            <li className="list-group-item">You will receive a rose, which will be added to your garden plot.</li>
+            <li className="list-group-item">Roses can be either yellow or red.</li>
+            <li className="list-group-item">Different gardeners have different color roses!</li>
+            <li className="list-group-item">You'll start with 10 practice rounds to get familiar with the game.</li>
+            <li className="list-group-item">After the practice, the real game will have 150 rounds.</li>
+          </ul>
+          <div className="text-center">
+            <Button variant="primary" onClick={() => setStage('stage1')}>
+              Start Practice
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 
   const showTransitionScreen = () => (
-    <div className="transition-screen">
-      <h2>Practice Rounds Complete</h2>
-      <p>Great job! You've completed the practice rounds.</p>
-      <p>Now you're ready to start the real game, which will have 150 rounds.</p>
-      <p>Press Start Game when ready!</p>
-      <button onClick={() => {
-        setStage('stage1');
-        setIsPractice(false);
-        setRoundCount(1);
-        setGarden([]);
-        setRoseCount(0);
-        // Change flower bed configuration and regions and reset for real game
-        setCurrentBeds(flowerBeds);
-        setCurrentFlowerRegions(flowerRegions);
-        setRedRegionIndex(0);
-        setYellowRegionIndex(0);
-        setRedOccupiedPositions(new Set());
-        setYellowOccupiedPositions(new Set());
-      }}>Start Game</button>
-    </div>
+    <Container className="mt-5">
+      <Card className="mx-auto text-center" style={{ maxWidth: '600px' }}>
+        <Card.Body>
+          <Card.Title className="mb-4">Practice Rounds Complete</Card.Title>
+          <Card.Text>Great job! You've completed the practice rounds.</Card.Text>
+          <Card.Text>Now you're ready to start the real game, which will have 150 rounds.</Card.Text>
+          <Card.Text>Press Start Game when ready!</Card.Text>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setStage('stage1');
+              setIsPractice(false);
+              setRoundCount(1);
+              setGarden([]);
+              setRoseCount(0);
+              setCurrentBeds(flowerBeds);
+              setCurrentFlowerRegions(flowerRegions);
+              setRedRegionIndex(0);
+              setYellowRegionIndex(0);
+              setRedOccupiedPositions(new Set());
+              setYellowOccupiedPositions(new Set());
+            }}
+          >
+            Start Game
+          </Button>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 
   const handleKeyPress = (event) => {
@@ -187,23 +214,31 @@ const App = () => {
 
 
   const showStage1 = () => {
-    return (<div className="stage">
-      <h2>Step 1: Choose a Gardening Store</h2>
-      <p>Press Left Arrow for Left Store, Right Arrow for Right Store</p>
-      <span>
-        <img
-          src="/gardenstore-red.png"
-          alt="Red Garden Store"
-          className={`store-image ${selectedStore === 'Store 1' ? 'selected' : ''}`}
-        />
-        <img
-          src="/gardenstore-blue.png"
-          alt="Blue Garden Store"
-          className={`store-image ${selectedStore === 'Store 2' ? 'selected' : ''}`}
-        />
-      </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
-    </div>)
+    return (
+      <Container className="mt-5">
+        <Card className="mx-auto text-center" style={{ maxWidth: '800px' }}>
+          <Card.Body>
+            <Card.Title>Step 1: Choose a Gardening Store</Card.Title>
+            <Card.Text>Press Left Arrow for Left Store, Right Arrow for Right Store</Card.Text>
+            <div className="d-flex justify-content-center align-items-center gap-4 mb-4">
+              <img
+                src="/gardenstore-red.png"
+                alt="Red Garden Store"
+                className={`store-image ${selectedStore === 'Store 1' ? 'selected' : ''}`}
+              />
+              <img
+                src="/gardenstore-blue.png"
+                alt="Blue Garden Store"
+                className={`store-image ${selectedStore === 'Store 2' ? 'selected' : ''}`}
+              />
+            </div>
+            <Card.Text>
+              {isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}
+            </Card.Text>
+          </Card.Body>
+        </Card>
+      </Container>
+    );
   };
 
   const handleStage1Choice = (store, keypress) => {
@@ -246,25 +281,29 @@ const App = () => {
   };
 
   const showStage2 = () => (
-    <div className="stage">
-      <h2>Step 2: Choose a Gardener to Talk To</h2>
-      <p>Press Left Arrow for Left Gardener, Right Arrow for Right Gardener</p>
-      <span>
-        <div className="gardener-selection">
-          <img
-            src={currentGardenerPair[0]}
-            alt="Gardener A"
-            className={`gardener-image ${selectedGardener === 'Gardener 1' ? 'selected' : ''}`}
-          />
-          <img
-            src={currentGardenerPair[1]}
-            alt="Gardener B"
-            className={`gardener-image ${selectedGardener === 'Gardener 2' ? 'selected' : ''}`}
-          />
-        </div>
-      </span>
-      <p>{isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}</p>
-    </div>
+    <Container className="mt-5">
+      <Card className="mx-auto text-center" style={{ maxWidth: '800px' }}>
+        <Card.Body>
+          <Card.Title>Step 2: Choose a Gardener</Card.Title>
+          <Card.Text>Press Left Arrow for Left Gardener, Right Arrow for Right Gardener</Card.Text>
+          <div className="d-flex justify-content-center align-items-center gap-4 mb-4">
+            <img
+              src={currentGardenerPair[0]}
+              alt="Gardener A"
+              className={`gardener-image ${selectedGardener === 'Gardener 1' ? 'selected' : ''}`}
+            />
+            <img
+              src={currentGardenerPair[1]}
+              alt="Gardener B"
+              className={`gardener-image ${selectedGardener === 'Gardener 2' ? 'selected' : ''}`}
+            />
+          </div>
+          <Card.Text>
+            {isPractice ? 'Practice ' : ''}Round: {roundCount} / {isPractice ? PRACTICE_ROUNDS : MAX_ROUNDS}
+          </Card.Text>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 
 
@@ -441,32 +480,38 @@ const App = () => {
 
   const showGarden = () => {
     return (
-      <div className="garden">
-
-        {/* Hide H3 text at end of game */}
-        {stage !== 'gameOver' && <h3>Your rose garden is growing...</h3>}
-
-        <div ref={containerRef}>
-          <canvas
-            ref={canvasRef}
-            width={GARDEN_WIDTH}
-            height={GARDEN_HEIGHT}
-            className="garden-canvas"
-          />
-
-        </div>
-      </div>
+      <Container className="mt-4">
+        <Card className="mx-auto" style={{ maxWidth: '800px' }}>
+          <Card.Body className="text-center">
+            {stage !== 'gameOver' && <Card.Title>Your rose garden is growing...</Card.Title>}
+            <div ref={containerRef}>
+              <canvas
+                ref={canvasRef}
+                width={GARDEN_WIDTH}
+                height={GARDEN_HEIGHT}
+                className="garden-canvas mt-3"
+              />
+            </div>
+          </Card.Body>
+        </Card>
+      </Container>
     );
   };
 
 
   const showGameOver = () => {
     return (
-      <div className="game-over">
-        <h2>Game Complete</h2>
-        <p>Congratulations! You've completed the Rose Garden Game.</p>
-        <p>You have grown a garden with {roseCount} roses.</p>
-      </div>
+      <Container className="mt-5">
+        <Card className="mx-auto text-center" style={{ maxWidth: '600px' }}>
+          <Card.Body>
+            <Card.Title className="mb-4">Game Complete!</Card.Title>
+            <Card.Text>Thank you for playing the Rose Garden Game!</Card.Text>
+            <Button variant="primary" onClick={() => saveChoicesToCSV(data)}>
+              Download Results
+            </Button>
+          </Card.Body>
+        </Card>
+      </Container>
     );
   };
 
@@ -537,8 +582,8 @@ const App = () => {
 
 
   return (
-    <div className="container">
-      <h1>Rose Garden Game</h1>
+    <Container fluid className="p-3" style={{ backgroundColor: 'mediumseagreen', minHeight: '100vh' }}>
+      <h1 className="text-center mb-4">🌸 Rose Garden Game 🌷</h1>
       {stage === 'intake' && showIntakeForm()}
       {stage === 'instructions' && showInstructions()}
       {stage === 'transition' && showTransitionScreen()}
@@ -546,7 +591,7 @@ const App = () => {
       {(stage === 'stage2' || stage === 'reward') && showStage2()}
       {stage === 'gameOver' && showGameOver()}
       {stage !== 'intake' && stage !== 'instructions' && stage !== 'transition' && showGarden()}
-    </div>
+    </Container>
   );
 
 

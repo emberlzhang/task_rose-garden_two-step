@@ -82,22 +82,34 @@ body {
   }
 }
 
-.store-image.selected,
-.gardener-image.selected {
-  border: 10px solid black;
+.card {
+  background-color: beige !important;
+  border: 12px solid burlywood !important;
+  border-radius: 15px !important;
 }
 
-.store-image {
-  height: 250px;
+.store-image,
+.gardener-image {
+  height: 250px !important;
   width: auto;
-  margin: 0 20px;
-  max-height: 800%;
-  max-width: 80%;
   object-fit: contain;
+  transition: transform 0.2s;
+  padding: 10px;
+  border-radius: 15px;
+}
+
+.store-image.selected,
+.gardener-image.selected {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(160, 82, 45, 0.5);
+  border-radius: 15px;
+  /* background-color: rgba(188, 143, 143, 0.2); */
+  /* background-color: #a64d2f; */
+  border: 8px solid #c47459;
 }
 
 .garden-canvas {
-  position: relative;
+  display: block;
   width: 500px;
   height: 250px;
   border: 12px solid burlywood;
@@ -106,23 +118,10 @@ body {
   background-color: green;
 }
 
-.store-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
 .gardener-selection {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.gardener-image {
-  height: 250px;
-  /* Adjust height to be half as tall as before */
-  width: auto;
-  margin: 0 20px;
 }
 
 .button-group {
