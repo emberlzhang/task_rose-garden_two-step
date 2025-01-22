@@ -100,7 +100,7 @@ body {
 
 .store-image.selected,
 .gardener-image.selected {
-  transform: scale(1.1);
+  transform: scale(1.05);
   box-shadow: 0 0 15px rgba(160, 82, 45, 0.5);
   border-radius: 15px;
   /* background-color: rgba(188, 143, 143, 0.2); */
