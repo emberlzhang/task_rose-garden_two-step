@@ -8,10 +8,6 @@ The game is a variation of the two-stage behavioral task paradigm without explic
 
 [Play Game](https://rose-garden-two-step.vercel.app/)
 
-Author: Ember Zhang
-
-Date: August 2024
-
 ## Game Mechanics
 
 Based on the "two-stage" task paradigm in cognitive behavioral research, players make sequential choices to grow roses in a garden. The game measures task perseverance through players' color preferences over time.
@@ -67,5 +63,7 @@ Data is saved locally to CSV, either at the end of the game or upon user exiting
 
 ## More Information
 
-Author Contact: ember_zhang@alumni.brown.edu
+Author: Ember Zhang, emberz@seas.upenn.edu
+
+Principal Investigator: Dr. Vincenzo Fiore, vincenzo.fiore@mssm.edu
 
